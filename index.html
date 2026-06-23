@@ -344,7 +344,7 @@ label{font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin-b
 /* =====================================================================
    설정: Apps Script 배포 후 받은 웹앱 URL을 여기에 붙여넣으세요.
    ===================================================================== */
-const API_URL = 'https://script.google.com/macros/s/AKfycbzEqZzcmQy7RKHuUrZykjvmdb5o9RQhAjBdzKbAO4eH5BQfwfbzMMT-C_P1PMtJXBwG/exec';
+const API_URL = 'PUT_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
 
 let STATE = {
   categories: [],
@@ -357,16 +357,53 @@ let STATE = {
   schoolName: '학교명 설정'
 };
 
-// ---------- API 호출 헬퍼 ----------
-async function api(action, payload = {}) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // Apps Script CORS 우회용
-    body: JSON.stringify({ action, payload })
+// ---------- API 호출 헬퍼 (JSONP 방식 — Apps Script CORS 문제 해결) ----------
+/**
+ * Apps Script 웹앱은 외부 도메인(GitHub Pages 등)에서 POST 요청을 받으면
+ * CORS 헤더를 응답에 붙여주지 못해 브라우저가 차단합니다.
+ * GET + JSONP 방식은 <script> 태그로 요청하므로 CORS 제약을 받지 않습니다.
+ */
+let _jsonpSeq = 0;
+
+function api(action, payload = {}) {
+  return new Promise((resolve, reject) => {
+    const cbName = '_gs_cb_' + (++_jsonpSeq) + '_' + Date.now();
+    const timeout = setTimeout(() => {
+      cleanup();
+      reject(new Error('요청 시간이 초과되었습니다. 네트워크 상태 또는 API URL을 확인해주세요.'));
+    }, 20000);
+
+    function cleanup() {
+      clearTimeout(timeout);
+      delete window[cbName];
+      const el = document.getElementById(cbName);
+      if (el) el.parentNode.removeChild(el);
+    }
+
+    window[cbName] = function(data) {
+      cleanup();
+      if (!data.ok) {
+        reject(new Error(data.error || '알 수 없는 오류'));
+      } else {
+        resolve(data);
+      }
+    };
+
+    const params = new URLSearchParams({
+      action,
+      payload: JSON.stringify(payload),
+      callback: cbName
+    });
+
+    const script = document.createElement('script');
+    script.id = cbName;
+    script.src = API_URL + '?' + params.toString();
+    script.onerror = () => {
+      cleanup();
+      reject(new Error('API 스크립트 로드 실패. API URL이 올바른지 확인해주세요.'));
+    };
+    document.head.appendChild(script);
   });
-  const data = await res.json();
-  if (!data.ok) throw new Error(data.error || '알 수 없는 오류');
-  return data;
 }
 
 function toast(msg) {
@@ -1033,13 +1070,34 @@ async function uploadIfFileSelected() {
   if (!selectedFile) return null;
   const base64Data = await fileToBase64(selectedFile);
   const cat = STATE.categories.find(c => c.id === STATE.currentCategoryId);
-  const res = await api('uploadFile', {
-    fileName: selectedFile.name,
-    mimeType: selectedFile.type || 'application/octet-stream',
-    base64Data,
-    categoryName: cat ? cat.name : ''
-  });
-  return res;
+
+  // 파일 업로드는 데이터가 커서 JSONP URL 길이 제한 초과 → POST fetch 사용
+  // Apps Script 배포가 "모든 사용자" 접근이면 응답 자체는 도착하지만
+  // CORS 헤더 부재로 브라우저가 응답을 막을 수 있음.
+  // 이를 해결하기 위해 응답을 text로 받아 직접 파싱합니다.
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'uploadFile',
+        payload: {
+          fileName: selectedFile.name,
+          mimeType: selectedFile.type || 'application/octet-stream',
+          base64Data,
+          categoryName: cat ? cat.name : ''
+        }
+      })
+    });
+    const text = await res.text();
+    const data = JSON.parse(text);
+    if (!data.ok) throw new Error(data.error || '파일 업로드 실패');
+    return data;
+  } catch (e) {
+    // fetch가 완전히 막힌 경우, 파일 없이 텍스트만 저장하고 사용자에게 안내
+    toast('파일 업로드 실패: ' + e.message + ' (파일 없이 텍스트만 저장합니다)');
+    return null;
+  }
 }
 
 // ---------- 모달 공용 ----------
