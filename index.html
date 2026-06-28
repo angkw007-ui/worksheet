@@ -225,7 +225,7 @@ label{font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin-b
         </div>
         
         <div class="stage-submenu">
-          <button class="submenu-btn active" onclick="switchSubView('list', event)">여러 개 한꺼번에 입력</button>
+          <button class="submenu-btn active" onclick="switchSubView('list', event)">할일추가</button>
           <button class="submenu-btn" onclick="switchSubView('doc', event)">결재예시 및 서식</button>
           <button class="submenu-btn" onclick="switchSubView('law', event)">관련법령 및 공문</button>
           <button class="submenu-btn" onclick="switchSubView('monthly', event)">월별단계</button>
@@ -242,8 +242,8 @@ label{font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin-b
             </div>
           </div>
           <div class="task-toolbar">
+            <button class="btn-secondary" id="bulkAddBtn">여러 개 한꺼번에 입력</button>
             <button class="btn-secondary" id="addTaskBtn">+ 개별 추가</button>
-            <button class="btn-secondary" id="bulkAddBtn">전체 텍스트로 추가(모달)</button>
             <button class="btn-secondary" id="aiExtractBtn">📄 문서에서 AI로 추출</button>
           </div>
           <div class="task-list" id="taskList"></div>
@@ -301,9 +301,6 @@ label{font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin-b
 <div class="toast" id="toast"></div>
 
 <script>
-/* =====================================================================
-   설정: 사용자가 제공한 실제 Apps Script 웹앱 URL 적용 완료
-   ===================================================================== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbzEoTM1fwD8ket_yU9wAOkPisnZ7UIL-Ra2R1U2sxYvvJEJpkE8AnWqF8gsi8coara9/exec';
 
 let STATE = { categories: [], stagesByCategory: {}, currentCategoryId: null, currentStageId: null, currentTab: 'task', isAdmin: false, userEmail: '', schoolName: '학교명 설정' };
@@ -376,7 +373,6 @@ function selectCategory(id) {
   document.getElementById('emptyMain').style.display = 'none'; document.getElementById('catContent').style.display = 'block';
   document.getElementById('catTitle').textContent = cat.name; document.getElementById('catDesc').textContent = cat.desc || '';
   
-  // NotebookLM 버튼 표시 로직
   const nbBtn = document.getElementById('notebookLinkBtn');
   if (cat.notebookLink && cat.notebookLink.trim() !== '') {
     nbBtn.style.display = 'inline-flex'; nbBtn.href = cat.notebookLink;
@@ -387,7 +383,7 @@ function selectCategory(id) {
   switchTab('task'); switchSubView('list'); renderStageRail();
 }
 
-// ---------- 카테고리 추가/수정 (NotebookLM 링크 포함) ----------
+// ---------- 카테고리 추가/수정 ----------
 document.getElementById('addCategoryBtn').addEventListener('click', () => {
   openModal(`
     <h3>업무분야 추가</h3>
@@ -448,8 +444,9 @@ async function loadTasks() {
     listEl.querySelectorAll('.task-del').forEach(el => el.addEventListener('click', async () => { if (!confirm('삭제할까요?')) return; await api('deleteTask', { id: el.closest('.task-item').dataset.id }); loadTasks(); }));
   } catch (e) { listEl.innerHTML = `<div class="empty-state">실패: ${escapeHtml(e.message)}</div>`; }
 }
-document.getElementById('addTaskBtn').addEventListener('click', () => { openModal(`<h3>개별 추가</h3><div class="field"><label>내용</label><textarea id="m-content"></textarea></div><div class="field"><label>비고</label><input type="text" id="m-note"></div><div class="field"><label>담당자</label><input type="text" id="m-owner"></div><div class="modal-actions"><button class="btn-secondary" onclick="closeModal()">취소</button><button class="btn-primary seal" id="m-submit">추가</button></div>`); document.getElementById('m-submit').addEventListener('click', async () => { const content = document.getElementById('m-content').value.trim(); if (!content) return toast('입력하세요.'); await api('addTask', { stageId: STATE.currentStageId, content, note: document.getElementById('m-note').value.trim(), owner: document.getElementById('m-owner').value.trim() }); closeModal(); toast('추가됨.'); loadTasks(); }); });
+
 document.getElementById('bulkAddBtn').addEventListener('click', () => { openModal(`<h3>전체 텍스트 추가</h3><div class="field"><textarea id="m-bulk" style="min-height:180px;" placeholder="내용 | 비고 | 담당자"></textarea></div><div class="modal-actions"><button class="btn-secondary" onclick="closeModal()">취소</button><button class="btn-primary seal" id="m-submit">추가</button></div>`); document.getElementById('m-submit').addEventListener('click', async () => { const text = document.getElementById('m-bulk').value; if (!text.trim()) return; await api('bulkAddTasks', { stageId: STATE.currentStageId, text }); closeModal(); toast('추가됨.'); loadTasks(); }); });
+document.getElementById('addTaskBtn').addEventListener('click', () => { openModal(`<h3>개별 추가</h3><div class="field"><label>내용</label><textarea id="m-content"></textarea></div><div class="field"><label>비고</label><input type="text" id="m-note"></div><div class="field"><label>담당자</label><input type="text" id="m-owner"></div><div class="modal-actions"><button class="btn-secondary" onclick="closeModal()">취소</button><button class="btn-primary seal" id="m-submit">추가</button></div>`); document.getElementById('m-submit').addEventListener('click', async () => { const content = document.getElementById('m-content').value.trim(); if (!content) return toast('입력하세요.'); await api('addTask', { stageId: STATE.currentStageId, content, note: document.getElementById('m-note').value.trim(), owner: document.getElementById('m-owner').value.trim() }); closeModal(); toast('추가됨.'); loadTasks(); }); });
 document.getElementById('aiExtractBtn').addEventListener('click', () => { openModal(`<h3>AI 문서 추출</h3><div class="field"><textarea id="m-source" style="min-height:160px;"></textarea></div><div class="modal-actions"><button class="btn-secondary" onclick="closeModal()">취소</button><button class="btn-primary seal" id="m-extract">추출</button></div><div id="m-extract-result"></div>`); document.getElementById('m-extract').addEventListener('click', async () => { const sourceText = document.getElementById('m-source').value.trim(); if (!sourceText) return; const resultBox = document.getElementById('m-extract-result'); resultBox.innerHTML = '분석중...'; try { const res = await api('extractTasksFromSource', { sourceText, categoryId: STATE.currentCategoryId, stageId: STATE.currentStageId }); const items = res.extracted; resultBox.innerHTML = `<div class="ai-result-list">${items.map((t, i) => `<label class="ai-result-item"><input type="checkbox" checked data-idx="${i}"><span>${escapeHtml(t.content)}</span></label>`).join('')}</div><div class="modal-actions"><button class="btn-primary seal" id="m-confirm">저장</button></div>`; document.getElementById('m-confirm').addEventListener('click', async () => { const checked = [...resultBox.querySelectorAll('input[type=checkbox]:checked')].map(c => items[c.dataset.idx]); if (checked.length === 0) return; await api('confirmExtractedTasks', { stageId: STATE.currentStageId, tasks: checked }); closeModal(); toast('저장됨.'); loadTasks(); }); } catch (e) { resultBox.innerHTML = `<div class="empty-state">${escapeHtml(e.message)}</div>`; } }); });
 
 document.getElementById('manageStageBtn').addEventListener('click', () => {
