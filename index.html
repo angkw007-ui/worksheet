@@ -2,72 +2,1143 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>학교업무별 프로세스</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
-:root{--ink:#1f2430; --paper:#f7f5f0; --paper-deep:#efebe2; --line:#d8d2c4; --seal:#a8333f; --pine:#3c5a4e; --gold:#a3793b; --white:#ffffff;}
+:root{
+  --ink:#1f2430; --paper:#f7f5f0; --paper-deep:#efebe2; --line:#d8d2c4;
+  --seal:#a8333f; --seal-soft:#f3e1e1;
+  --pine:#3c5a4e; --pine-soft:#e3ebe6;
+  --gold:#a3793b; --gold-soft:#f1e7d6;
+  --sky:#2c5f8a;  --sky-soft:#e0eaf4;
+  --violet:#5a4e7c; --violet-soft:#ece9f4;
+  --muted:#7c7568; --white:#fff;
+  --radius:10px;
+  --shadow:0 1px 3px rgba(31,36,48,.07),0 4px 14px rgba(31,36,48,.05);
+}
 *{box-sizing:border-box;}
-body{font-family:'Pretendard', sans-serif; background:var(--paper); color:var(--ink); margin:0;}
-.app{display:grid; grid-template-columns:268px 1fr; min-height:100vh;}
-aside{background:var(--paper-deep); border-right:1px solid var(--line); padding:20px; display:flex; flex-direction:column;}
-main{padding:40px; max-width:1000px;}
-.cat-item{padding:12px; cursor:pointer; border-radius:8px; margin-bottom:5px; transition:0.2s;}
-.cat-item.active{background:white; border:1px solid var(--line); font-weight:bold;}
-.tabs{display:flex; gap:10px; border-bottom:1px solid var(--line); margin-bottom:20px;}
-.tab{padding:10px; cursor:pointer; font-weight:600; color:var(--muted);}
-.tab.active{color:var(--seal); border-bottom:2px solid var(--seal);}
-.panel{display:none;} .panel.active{display:block;}
-.stage-rail{display:flex; gap:10px; overflow-x:auto; margin-bottom:20px;}
-.stage-pill{padding:8px 16px; border:1px solid var(--line); border-radius:20px; cursor:pointer; white-space:nowrap;}
-.stage-pill.active{background:var(--seal); color:white;}
-.task-item{display:flex; align-items:center; background:white; padding:15px; border-radius:8px; margin-bottom:10px; border:1px solid var(--line);}
-.task-body{flex:1;}
-input,textarea,select{width:100%; padding:12px; border:1px solid var(--line); border-radius:8px; margin-bottom:10px;}
-button{padding:10px 20px; border-radius:8px; border:none; cursor:pointer; background:var(--seal); color:white; font-weight:bold;}
-/* 모바일 반응형 */
-@media(max-width:760px){
+html,body{margin:0;padding:0;height:100%;}
+body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  background:var(--paper);color:var(--ink);font-size:14px;line-height:1.55;}
+
+/* ── 전체 레이아웃 ── */
+.app{display:grid;grid-template-columns:210px 1fr;min-height:100vh;}
+
+/* ── 업무분야 사이드바 ── */
+.sidebar{
+  background:var(--paper-deep);border-right:1px solid var(--line);
+  padding:18px 12px 20px;display:flex;flex-direction:column;gap:14px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.brand{padding:0 4px;}
+.brand .mark{width:9px;height:9px;border-radius:2px;background:var(--seal);
+  display:inline-block;transform:rotate(45deg);margin-right:6px;}
+.brand h1{font-size:13.5px;font-weight:800;margin:0;display:inline;}
+.brand small{display:block;color:var(--muted);font-size:11px;margin-top:5px;
+  cursor:pointer;border-bottom:1px dashed transparent;width:fit-content;}
+.brand small:hover{color:var(--seal);border-bottom-color:var(--seal);}
+
+.cat-list{display:flex;flex-direction:column;gap:2px;flex:1;overflow-y:auto;}
+.cat-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;
+  cursor:pointer;font-size:13px;font-weight:500;transition:background .12s;border:1px solid transparent;}
+.cat-item:hover{background:rgba(31,36,48,.04);}
+.cat-item.active{background:var(--white);border-color:var(--line);box-shadow:var(--shadow);}
+.cat-dot{width:6px;height:6px;border-radius:50%;background:var(--seal);flex-shrink:0;}
+.cat-item .owner{margin-left:auto;font-size:10px;color:var(--muted);}
+
+.sidebar-foot{padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px;}
+.btn-ghost{background:none;border:1px dashed var(--line);color:var(--muted);
+  padding:8px 10px;border-radius:7px;font-size:12px;cursor:pointer;text-align:left;width:100%;font-family:inherit;}
+.btn-ghost:hover{border-color:var(--seal);color:var(--seal);}
+.whoami{font-size:10px;color:var(--muted);padding:0 4px;}
+
+/* ── 메인: 단계 세로 네비 + 4열 그리드 ── */
+.main{display:flex;min-height:100vh;overflow:hidden;}
+
+/* 단계 세로 네비 */
+.stage-nav{
+  width:128px;flex-shrink:0;background:var(--white);border-right:1px solid var(--line);
+  padding:18px 0;display:flex;flex-direction:column;
+  position:sticky;top:0;height:100vh;overflow-y:auto;
+}
+.stage-nav-header{font-size:10px;font-weight:700;color:var(--muted);
+  letter-spacing:.5px;padding:0 13px 10px;text-transform:uppercase;}
+.stage-nav-item{
+  display:flex;align-items:center;gap:7px;padding:9px 13px;
+  cursor:pointer;font-size:12.5px;font-weight:600;color:var(--muted);
+  border-left:3px solid transparent;transition:all .12s;
+}
+.stage-nav-item:hover{color:var(--ink);background:var(--paper);}
+.stage-nav-item.active{color:var(--seal);border-left-color:var(--seal);background:var(--seal-soft);}
+.stage-num{width:19px;height:19px;border-radius:50%;background:var(--paper-deep);
+  font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;color:var(--muted);}
+.stage-nav-item.active .stage-num{background:var(--seal);color:#fff;}
+.stage-nav-foot{margin-top:auto;padding:10px 13px 0;border-top:1px solid var(--line);}
+.stage-manage-btn{font-size:11px;color:var(--muted);background:none;border:1px dashed var(--line);
+  border-radius:6px;padding:6px 8px;cursor:pointer;width:100%;font-family:inherit;text-align:left;}
+.stage-manage-btn:hover{border-color:var(--seal);color:var(--seal);}
+
+/* 컨텐츠 */
+.content-area{flex:1;overflow:auto;padding:18px 16px 40px;}
+
+.cat-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:12px;}
+.cat-header h2{font-size:19px;font-weight:800;margin:0 0 2px;letter-spacing:-.3px;}
+.cat-header p{margin:0;color:var(--muted);font-size:12px;}
+.cat-actions{display:flex;gap:6px;flex-shrink:0;}
+.icon-btn{background:var(--white);border:1px solid var(--line);border-radius:7px;
+  padding:5px 11px;font-size:11.5px;cursor:pointer;font-family:inherit;}
+.icon-btn:hover{border-color:var(--seal);color:var(--seal);}
+
+/* 선택 단계 배너 */
+.stage-banner{
+  display:flex;align-items:center;gap:10px;
+  background:var(--seal-soft);border:1px solid rgba(168,51,63,.15);
+  border-radius:9px;padding:9px 15px;margin-bottom:14px;
+}
+.stage-banner .badge{background:var(--seal);color:#fff;font-size:11px;font-weight:700;
+  padding:2px 10px;border-radius:999px;flex-shrink:0;}
+.stage-banner .sname{font-size:13.5px;font-weight:700;color:var(--seal);}
+.stage-banner .hint{font-size:11px;color:var(--muted);margin-left:auto;}
+
+/* ── 4열 그리드 ── */
+.col-grid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(210px,1fr));
+  gap:12px;min-width:800px;
+}
+.col-card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+  display:flex;flex-direction:column;overflow:hidden;}
+.col-head{
+  padding:10px 13px;font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--line);letter-spacing:.1px;
+}
+.col-head .col-icon{font-size:14px;margin-right:5px;}
+.col-head .add-btn{background:none;border:none;font-size:18px;cursor:pointer;
+  line-height:1;color:inherit;opacity:.5;padding:0 2px;}
+.col-head .add-btn:hover{opacity:1;}
+.col-body{padding:10px;flex:1;display:flex;flex-direction:column;gap:6px;min-height:140px;}
+
+/* 열 색상 */
+.col-task .col-head{background:rgba(168,51,63,.07);  color:var(--seal);}
+.col-doc  .col-head{background:rgba(60,90,78,.07);   color:var(--pine);}
+.col-law  .col-head{background:rgba(44,95,138,.07);  color:var(--sky);}
+.col-etc  .col-head{background:rgba(90,78,124,.07);  color:var(--violet);}
+
+/* 할일 아이템 */
+.task-item{
+  display:flex;align-items:flex-start;gap:8px;padding:8px 10px;
+  border-radius:7px;border:1px solid var(--line);background:var(--paper);
+}
+.task-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.task-item.done{opacity:.45;}
+.task-check{
+  width:16px;height:16px;border-radius:4px;border:1.5px solid var(--line);
+  flex-shrink:0;margin-top:2px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:10px;
+}
+.task-check.checked{background:var(--pine);border-color:var(--pine);color:#fff;}
+.task-body{flex:1;min-width:0;}
+.task-content{font-size:12.5px;font-weight:500;line-height:1.45;}
+.task-item.done .task-content{text-decoration:line-through;}
+.task-note{font-size:10.5px;color:var(--muted);margin-top:2px;}
+.item-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;
+  padding:1px;opacity:0;transition:opacity .1s;}
+.task-item:hover .item-del,.doc-item:hover .item-del{opacity:1;}
+.item-del:hover{color:var(--seal);}
+
+/* 문서/법령/기타 아이템 */
+.doc-item{
+  padding:8px 10px;border-radius:7px;border:1px solid var(--line);
+  background:var(--paper);font-size:12.5px;display:flex;flex-direction:column;gap:3px;
+}
+.doc-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.doc-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:4px;}
+.doc-title{font-weight:600;line-height:1.4;flex:1;}
+.doc-sub{font-size:10.5px;color:var(--muted);}
+.doc-file-tag{
+  display:inline-block;font-size:9.5px;font-weight:700;padding:2px 6px;
+  border-radius:4px;background:var(--gold-soft);color:var(--gold);margin-bottom:2px;
+}
+.doc-link{font-size:11px;font-weight:600;text-decoration:none;}
+.col-doc .doc-link{color:var(--pine);}
+.col-law .doc-link{color:var(--sky);}
+.col-etc .doc-link{color:var(--violet);}
+.doc-link:hover{text-decoration:underline;}
+
+/* QnA */
+.qna-item{padding:8px 10px;border-radius:7px;border:1px solid var(--line);
+  background:var(--paper);font-size:12.5px;}
+.qna-q{font-weight:600;line-height:1.4;}
+.qna-meta{font-size:10.5px;color:var(--muted);margin-top:2px;}
+.qna-a{margin-top:6px;padding:6px 8px;background:var(--pine-soft);border-radius:6px;font-size:11.5px;}
+.qna-a .alabel{font-size:10px;color:var(--pine);font-weight:700;margin-bottom:2px;}
+.qna-ans-row{display:flex;gap:5px;margin-top:6px;}
+.qna-ans-row input{flex:1;font-size:12px;}
+.qna-badge{display:inline-block;font-size:9.5px;font-weight:700;padding:2px 6px;
+  border-radius:4px;margin-right:4px;background:var(--gold-soft);color:var(--gold);}
+.qna-badge.done{background:var(--pine-soft);color:var(--pine);}
+
+/* 유형 태그 (결재예시/서식 구분) */
+.type-tag{
+  display:inline-block;font-size:9.5px;font-weight:700;padding:2px 7px;
+  border-radius:4px;margin-bottom:3px;
+}
+.type-tag.결재예시{background:var(--pine-soft);color:var(--pine);}
+.type-tag.서식{background:var(--gold-soft);color:var(--gold);}
+
+/* 빈 상태 */
+.empty-col{font-size:11.5px;color:var(--muted);text-align:center;padding:18px 8px;line-height:1.6;}
+.empty-main{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:60vh;color:var(--muted);font-size:14px;gap:8px;}
+.empty-main .icon{font-size:36px;opacity:.3;}
+
+/* 로딩 */
+.loading-text{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;padding:8px 0;}
+.spinner{width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--seal);
+  border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* 버튼 */
+.btn-primary{background:var(--ink);color:#fff;border:none;border-radius:7px;
+  padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;}
+.btn-primary.seal{background:var(--seal);}
+.btn-primary:hover{opacity:.88;}
+.btn-secondary{background:var(--white);border:1px solid var(--line);border-radius:7px;
+  padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--ink);}
+.btn-secondary:hover{border-color:var(--ink);}
+
+/* 하단 도구모음 */
+.bottom-toolbar{display:flex;gap:8px;margin-top:14px;}
+
+/* 모달 */
+.modal-overlay{position:fixed;inset:0;background:rgba(31,36,48,.45);
+  display:none;align-items:center;justify-content:center;z-index:100;padding:20px;}
+.modal-overlay.show{display:flex;}
+.modal{background:#fff;border-radius:13px;padding:24px 26px;
+  max-width:480px;width:100%;max-height:86vh;overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.modal h3{margin:0 0 3px;font-size:16px;}
+.modal .sub{font-size:12px;color:var(--muted);margin-bottom:16px;}
+.modal-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:8px;}
+.field{margin-bottom:12px;}
+label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;}
+input[type=text],input[type=email],textarea,select{
+  width:100%;padding:8px 11px;border:1px solid var(--line);border-radius:7px;
+  font-size:13px;font-family:inherit;background:#fff;color:var(--ink);}
+textarea{resize:vertical;min-height:76px;}
+.hint{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.5;}
+
+/* 파일 드롭존 */
+.file-drop{
+  border:2px dashed var(--line);border-radius:9px;padding:20px 16px;
+  text-align:center;font-size:12.5px;color:var(--muted);cursor:pointer;
+  background:var(--paper);transition:all .15s;
+}
+.file-drop:hover,.file-drop.drag-over{border-color:var(--seal);background:var(--seal-soft);color:var(--seal);}
+.file-drop.has-file{border-color:var(--pine);background:var(--pine-soft);color:var(--pine);}
+.file-drop .drop-icon{font-size:28px;margin-bottom:6px;}
+.file-drop .drop-hint{font-size:11px;color:var(--muted);margin-top:4px;}
+.file-drop.has-file .drop-hint{color:var(--pine);}
+.file-drop.drag-over .drop-hint{color:var(--seal);}
+
+/* AI 추출 드롭존 */
+.ai-drop-zone{
+  border:2px dashed var(--line);border-radius:9px;padding:30px 20px;
+  text-align:center;cursor:pointer;background:var(--paper);transition:all .15s;
+}
+.ai-drop-zone:hover,.ai-drop-zone.drag-over{border-color:var(--seal);background:var(--seal-soft);}
+.ai-drop-zone.has-file{border-color:var(--pine);background:var(--pine-soft);}
+.ai-drop-zone .dz-icon{font-size:32px;margin-bottom:8px;}
+.ai-drop-zone .dz-title{font-size:13.5px;font-weight:600;margin-bottom:4px;}
+.ai-drop-zone .dz-sub{font-size:11.5px;color:var(--muted);}
+.ai-drop-zone.has-file .dz-sub{color:var(--pine);}
+
+.ai-result-list{display:flex;flex-direction:column;gap:5px;margin:10px 0;max-height:240px;overflow-y:auto;}
+.ai-result-item{display:flex;gap:7px;align-items:flex-start;background:var(--paper);
+  border-radius:7px;padding:8px 10px;font-size:12.5px;}
+.ai-result-item input[type=checkbox]{margin-top:2px;}
+
+/* 단계 관리 */
+.stage-edit-row{display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--paper);}
+.stage-edit-row input{flex:1;}
+.stage-edit-row button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;}
+.stage-edit-row button:hover{color:var(--seal);}
+
+/* 토스트 */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:#fff;padding:10px 18px;border-radius:7px;
+  font-size:13px;z-index:200;opacity:0;transition:opacity .22s;pointer-events:none;}
+.toast.show{opacity:1;}
+
+@media(max-width:900px){
   .app{grid-template-columns:1fr;}
-  aside{display:none;} /* 모바일에서는 사이드바 숨김 처리 가능, 필요시 버튼으로 호출 */
-  main{padding:20px;}
-  .stage-pill{padding:12px 20px;}
+  .sidebar{height:auto;position:sticky;top:0;z-index:10;flex-direction:row;
+    overflow-x:auto;padding:10px 12px;border-right:none;border-bottom:1px solid var(--line);}
+  .cat-list{flex-direction:row;flex:none;}
+  .sidebar-foot{display:none;}
+  .stage-nav{width:100%;height:auto;position:static;flex-direction:row;
+    overflow-x:auto;padding:10px 0;border-right:none;border-bottom:1px solid var(--line);}
+  .stage-nav-header,.stage-nav-foot{display:none;}
+  .stage-nav-item{border-left:none;border-bottom:3px solid transparent;padding:6px 12px;}
+  .stage-nav-item.active{border-bottom-color:var(--seal);border-left:none;background:none;}
+  .col-grid{grid-template-columns:repeat(4,minmax(180px,1fr));}
 }
 </style>
 </head>
 <body>
+
 <div class="app">
-  <aside><h3>업무분야</h3><div id="catList"></div><button onclick="addCat()">+ 추가</button></aside>
-  <main>
-    <div id="catContent" style="display:none;">
-      <h2 id="catTitle"></h2>
-      <a id="nbLink" target="_blank" style="display:none; color:blue;">🤖 NotebookLM ↗</a>
-      <div class="tabs">
-        <div class="tab active" data-tab="task">단계별 업무</div>
-        <div class="tab" data-tab="law">법령/서식</div>
-        <div class="tab" data-tab="qna">묻고답하기</div>
+  <!-- 업무분야 사이드바 -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="mark"></span><h1>학교업무별 프로세스</h1>
+      <small id="schoolNameLabel">학교명 설정</small>
+    </div>
+    <div class="cat-list" id="catList"></div>
+    <div class="sidebar-foot">
+      <button class="btn-ghost" id="addCategoryBtn">+ 업무분야 추가</button>
+      <div class="whoami" id="whoamiBox">확인 중...</div>
+    </div>
+  </aside>
+
+  <!-- 메인 -->
+  <div class="main" id="mainArea">
+    <div class="empty-main" id="emptyMain">
+      <div class="icon">📋</div>
+      <div>왼쪽에서 업무분야를 선택하세요.</div>
+    </div>
+
+    <!-- 단계 세로 네비 -->
+    <nav class="stage-nav" id="stageNav" style="display:none;">
+      <div class="stage-nav-header">진행 단계</div>
+      <div id="stageNavList"></div>
+      <div class="stage-nav-foot">
+        <button class="stage-manage-btn" id="manageStageBtn">+ 단계 관리</button>
       </div>
-      <div class="panel active" id="panel-task">
-        <div class="stage-rail" id="stageRail"></div>
-        <div id="subButtons" style="margin-bottom:20px;">
-          <button onclick="switchView('list')">할일추가</button>
-          <button onclick="switchView('monthly')">월별단계</button>
-          <button onclick="switchView('memo')">기타메모</button>
+    </nav>
+
+    <!-- 컨텐츠 -->
+    <div class="content-area" id="contentArea" style="display:none;">
+      <div class="cat-header">
+        <div>
+          <h2 id="catTitle">-</h2>
+          <p id="catDesc"></p>
         </div>
-        <div id="taskList"></div>
-        <div id="monthlyList" style="display:none;"></div>
-        <div id="memoArea" style="display:none;"><textarea id="memoIn" style="height:200px;"></textarea><button onclick="saveMemo()">저장</button></div>
+        <div class="cat-actions">
+          <button class="icon-btn" id="editCategoryBtn">수정</button>
+          <button class="icon-btn" id="deleteCategoryBtn">삭제</button>
+        </div>
+      </div>
+
+      <!-- 단계 배너 -->
+      <div class="stage-banner" id="stageBanner">
+        <span class="badge" id="stageBannerNum">-</span>
+        <span class="sname" id="stageBannerName">단계를 선택하세요</span>
+        <span class="hint" id="stageBannerHint"></span>
+      </div>
+
+      <!-- 4열 그리드 -->
+      <div class="col-grid" id="colGrid">
+
+        <!-- ① 해야할일 -->
+        <div class="col-card col-task">
+          <div class="col-head">
+            <span><span class="col-icon">✅</span>해야할일</span>
+            <button class="add-btn" id="addTaskBtn" title="할일 추가">＋</button>
+          </div>
+          <div class="col-body" id="taskList"></div>
+        </div>
+
+        <!-- ② 결재예시 및 서식 -->
+        <div class="col-card col-doc">
+          <div class="col-head">
+            <span><span class="col-icon">📝</span>결재예시 및 서식</span>
+            <button class="add-btn" id="addDocBtn" title="결재예시·서식 추가">＋</button>
+          </div>
+          <div class="col-body" id="docList"></div>
+        </div>
+
+        <!-- ③ 관련법령·공문 -->
+        <div class="col-card col-law">
+          <div class="col-head">
+            <span><span class="col-icon">⚖️</span>관련법령·공문</span>
+            <button class="add-btn" id="addLawBtn" title="법령·공문 추가">＋</button>
+          </div>
+          <div class="col-body" id="lawList"></div>
+        </div>
+
+        <!-- ④ 기타·묻고답하기 -->
+        <div class="col-card col-etc">
+          <div class="col-head">
+            <span><span class="col-icon">💬</span>기타·묻고답하기</span>
+            <button class="add-btn" id="addQuestionBtn" title="질문 추가">＋</button>
+          </div>
+          <div class="col-body" id="qnaList"></div>
+        </div>
+
+      </div><!-- /col-grid -->
+
+      <!-- 하단 도구 -->
+      <div class="bottom-toolbar">
+        <button class="btn-secondary" id="bulkAddBtn">📋 할일 여러 개 입력</button>
+        <button class="btn-secondary" id="aiExtractBtn">🤖 파일에서 AI로 할일 추출</button>
       </div>
     </div>
-  </main>
+  </div>
 </div>
-<script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbzsSR8N6FS6uXA85Z2sJLPGCW47XjOlCWFv1EnxDT1ewsQe2yYiFrJGWZsGbBiqz1r4/exec';
-let STATE = { curCat:null, curStage:null };
 
-// 여기서부터 선생님의 기존에 쓰시던 api() 함수, loadTasks(), renderStageRail() 등 
-// 모든 상세 로직 함수들을 그대로 넣으시면 됩니다. 
-// 제가 아까 실수했던 '요약 코드'가 아니라, 선생님이 작업하시던 
-// 그 완성된 상세 기능 코드들을 그대로 가져와 붙여주시면 완벽합니다.
+<div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalBody"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── 설정 ── */
+const API_URL = 'PUT_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+
+let STATE = {
+  categories:[], stagesByCategory:{},
+  currentCategoryId:null, currentStageId:null,
+  isAdmin:false, userEmail:'', schoolName:'학교명 설정'
+};
+
+/* ── JSONP API ── */
+let _seq = 0;
+function api(action, payload={}) {
+  return new Promise((resolve, reject) => {
+    const cb = '_cb_' + (++_seq) + '_' + Date.now();
+    const timer = setTimeout(()=>{cleanup();reject(new Error('요청 시간 초과'));}, 20000);
+    function cleanup(){
+      clearTimeout(timer); delete window[cb];
+      const el=document.getElementById(cb); if(el) el.parentNode.removeChild(el);
+    }
+    window[cb] = data => { cleanup(); data.ok ? resolve(data) : reject(new Error(data.error||'오류')); };
+    const s = document.createElement('script');
+    s.id = cb;
+    s.src = API_URL + '?' + new URLSearchParams({action, payload:JSON.stringify(payload), callback:cb});
+    s.onerror = ()=>{ cleanup(); reject(new Error('스크립트 로드 실패')); };
+    document.head.appendChild(s);
+  });
+}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2400);
+}
+function esc(s){
+  return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ── 초기화 ── */
+async function init(){
+  try{
+    const who=await api('whoAmI');
+    STATE.isAdmin=who.isAdmin; STATE.userEmail=who.email;
+    document.getElementById('whoamiBox').textContent=who.email?(who.email+(who.isAdmin?' ·관리자':'')):'게스트';
+  }catch(e){ document.getElementById('whoamiBox').textContent='로그인 확인 불가'; }
+  try{
+    const data=await api('getAll');
+    STATE.categories=data.categories;
+    STATE.stagesByCategory=data.stagesByCategory;
+    STATE.schoolName=(data.settings&&data.settings.schoolName)||'학교명 설정';
+    document.getElementById('schoolNameLabel').textContent=STATE.schoolName;
+    renderCategoryList();
+    if(STATE.categories.length>0) selectCategory(STATE.categories[0].id);
+  }catch(e){ toast('초기 로딩 실패: '+e.message); }
+}
+
+/* ── 사이드바 ── */
+function renderCategoryList(){
+  const el=document.getElementById('catList');
+  el.innerHTML=STATE.categories.map(c=>`
+    <div class="cat-item ${c.id===STATE.currentCategoryId?'active':''}" data-id="${c.id}">
+      <span class="cat-dot"></span>${esc(c.name)}
+      <span class="owner">${esc(c.owner||'')}</span>
+    </div>`).join('');
+  el.querySelectorAll('.cat-item').forEach(e=>e.addEventListener('click',()=>selectCategory(e.dataset.id)));
+}
+
+function selectCategory(id){
+  STATE.currentCategoryId=id; STATE.currentStageId=null;
+  renderCategoryList();
+  const cat=STATE.categories.find(c=>c.id===id); if(!cat) return;
+  document.getElementById('emptyMain').style.display='none';
+  document.getElementById('stageNav').style.display='';
+  document.getElementById('contentArea').style.display='';
+  document.getElementById('catTitle').textContent=cat.name;
+  document.getElementById('catDesc').textContent=cat.desc||'';
+  renderStageNav();
+}
+
+/* ── 단계 세로 네비 ── */
+function renderStageNav(){
+  const stages=STATE.stagesByCategory[STATE.currentCategoryId]||[];
+  const list=document.getElementById('stageNavList');
+  if(!stages.length){
+    list.innerHTML='<div style="padding:10px 13px;font-size:11px;color:var(--muted);">단계가 없습니다.<br>아래 + 단계 관리를 눌러 추가하세요.</div>';
+    clearGrid(); updateBanner(null,[]); return;
+  }
+  if(!STATE.currentStageId||!stages.find(s=>s.id===STATE.currentStageId))
+    STATE.currentStageId=stages[0].id;
+  list.innerHTML=stages.map((s,i)=>`
+    <div class="stage-nav-item ${s.id===STATE.currentStageId?'active':''}" data-id="${s.id}">
+      <span class="stage-num">${i+1}</span>${esc(s.name)}
+    </div>`).join('');
+  list.querySelectorAll('.stage-nav-item').forEach(e=>e.addEventListener('click',()=>{
+    STATE.currentStageId=e.dataset.id; renderStageNav();
+  }));
+  updateBanner(STATE.currentStageId,stages);
+  loadAllColumns();
+}
+
+function updateBanner(id,stages){
+  const idx=stages.findIndex(s=>s.id===id);
+  const s=stages[idx];
+  document.getElementById('stageBannerNum').textContent=idx>=0?idx+1:'-';
+  document.getElementById('stageBannerName').textContent=s?s.name:'단계를 선택하세요';
+  document.getElementById('stageBannerHint').textContent=s?`총 ${stages.length}단계 중 ${idx+1}번째`:'← 단계를 추가하세요';
+}
+
+/* ── 4열 동시 로딩 ── */
+async function loadAllColumns(){
+  if(!STATE.currentStageId) return;
+  ['taskList','docList','lawList','qnaList'].forEach(id=>{
+    document.getElementById(id).innerHTML='<div class="loading-text"><span class="spinner"></span>불러오는 중</div>';
+  });
+  await Promise.all([loadTasks(), loadDocs(), loadLaws(), loadQna()]);
+}
+function clearGrid(){
+  ['taskList','docList','lawList','qnaList'].forEach(id=>{
+    document.getElementById(id).innerHTML='<div class="empty-col">-</div>';
+  });
+}
+
+/* ── ① 해야할일 ── */
+async function loadTasks(){
+  const el=document.getElementById('taskList');
+  try{
+    const {tasks}=await api('getTasks',{stageId:STATE.currentStageId});
+    if(!tasks.length){el.innerHTML='<div class="empty-col">할일이 없습니다</div>';return;}
+    el.innerHTML=tasks.map(t=>`
+      <div class="task-item ${t.done?'done':''}" data-id="${t.id}">
+        <div class="task-check ${t.done?'checked':''}" data-action="toggle">${t.done?'✓':''}</div>
+        <div class="task-body">
+          <div class="task-content">${esc(t.content)}</div>
+          ${t.note?`<div class="task-note">📌 ${esc(t.note)}</div>`:''}
+          ${t.owner?`<div class="task-note">👤 ${esc(t.owner)}</div>`:''}
+        </div>
+        <button class="item-del" data-action="delete">✕</button>
+      </div>`).join('');
+    el.querySelectorAll('.task-check').forEach(c=>c.addEventListener('click',async()=>{
+      await api('toggleTaskDone',{id:c.closest('.task-item').dataset.id}); loadTasks();
+    }));
+    el.querySelectorAll('.item-del').forEach(b=>b.addEventListener('click',async()=>{
+      if(!confirm('삭제할까요?')) return;
+      await api('deleteTask',{id:b.closest('.task-item').dataset.id}); loadTasks();
+    }));
+  }catch(e){el.innerHTML=`<div class="empty-col">오류: ${esc(e.message)}</div>`;}
+}
+
+document.getElementById('addTaskBtn').addEventListener('click',()=>{
+  if(!STATE.currentStageId) return toast('단계를 먼저 선택하세요.');
+  openModal(`
+    <h3>할일 추가</h3><div class="sub">현재 단계에 새 할일을 추가합니다.</div>
+    <div class="field"><label>할일 내용</label><textarea id="m-content" placeholder="예: 보호자에게 48시간 이내 사안 통보"></textarea></div>
+    <div class="field"><label>비고</label><input type="text" id="m-note" placeholder="기한, 참고사항"></div>
+    <div class="field"><label>담당자</label><input type="text" id="m-owner"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">취소</button>
+      <button class="btn-primary seal" id="m-submit">추가</button>
+    </div>`);
+  document.getElementById('m-submit').addEventListener('click',async()=>{
+    const content=document.getElementById('m-content').value.trim();
+    if(!content) return toast('내용을 입력하세요.');
+    await api('addTask',{stageId:STATE.currentStageId,content,
+      note:document.getElementById('m-note').value.trim(),
+      owner:document.getElementById('m-owner').value.trim()});
+    closeModal(); toast('추가되었습니다.'); loadTasks();
+  });
+});
+
+/* ── ② 결재예시 및 서식 (합쳐진 열) ── */
+async function loadDocs(){
+  const el=document.getElementById('docList');
+  try{
+    const {docs}=await api('getDocs',{categoryId:STATE.currentCategoryId});
+    if(!docs.length){el.innerHTML='<div class="empty-col">결재예시·서식이 없습니다</div>';return;}
+    el.innerHTML=docs.map(d=>`
+      <div class="doc-item" data-id="${d.id}">
+        <div class="doc-item-top">
+          <div>
+            <span class="type-tag ${esc(d.type)}">${esc(d.type)}</span>
+            <span class="doc-title">${esc(d.title)}</span>
+          </div>
+          <button class="item-del">✕</button>
+        </div>
+        ${d.desc?`<div class="doc-sub">${esc(d.desc)}</div>`:''}
+        ${d.fileUrl?`<a class="doc-link" href="${d.fileUrl}" target="_blank">📎 ${esc(d.fileName||'열기')}</a>`:''}
+      </div>`).join('');
+    el.querySelectorAll('.item-del').forEach(b=>b.addEventListener('click',async()=>{
+      if(!confirm('삭제할까요?')) return;
+      await api('deleteDoc',{id:b.closest('.doc-item').dataset.id}); loadDocs();
+    }));
+  }catch(e){el.innerHTML=`<div class="empty-col">오류: ${esc(e.message)}</div>`;}
+}
+
+document.getElementById('addDocBtn').addEventListener('click',()=>{
+  if(!STATE.currentCategoryId) return toast('업무분야를 선택하세요.');
+  openModal(`
+    <h3>결재예시 및 서식 추가</h3>
+    <div class="field">
+      <label>구분</label>
+      <select id="m-type">
+        <option value="결재예시">결재예시</option>
+        <option value="서식">서식</option>
+      </select>
+    </div>
+    <div class="field"><label>제목</label><input type="text" id="m-title" placeholder="예: 학교폭력 사안보고 결재문"></div>
+    <div class="field"><label>설명 (선택)</label><textarea id="m-desc" style="min-height:55px;"></textarea></div>
+    <div class="field">
+      <label>첨부파일 (hwp, hwpx, pdf, docx 등)</label>
+      <div class="file-drop" id="m-filedrop">
+        <div class="drop-icon">📎</div>
+        <div>클릭하거나 파일을 여기에 드래그하세요</div>
+        <div class="drop-hint">hwp, hwpx, pdf, docx, xlsx 등 모든 형식 가능</div>
+      </div>
+      <input type="file" id="m-fileinput" style="display:none;">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">취소</button>
+      <button class="btn-primary" id="m-submit">추가</button>
+    </div>`);
+  setupFileDrop();
+  document.getElementById('m-submit').addEventListener('click',async()=>{
+    const title=document.getElementById('m-title').value.trim();
+    if(!title) return toast('제목을 입력하세요.');
+    const fi=await uploadIfFileSelected();
+    await api('addDoc',{categoryId:STATE.currentCategoryId,title,
+      type:document.getElementById('m-type').value,
+      desc:document.getElementById('m-desc').value.trim(),
+      fileUrl:fi?fi.fileUrl:'',fileName:fi?fi.fileName:''});
+    closeModal(); toast('추가되었습니다.'); loadDocs();
+  });
+});
+
+/* ── ③ 관련법령·공문 ── */
+async function loadLaws(){
+  const el=document.getElementById('lawList');
+  try{
+    const {laws}=await api('getLaws',{categoryId:STATE.currentCategoryId});
+    if(!laws.length){el.innerHTML='<div class="empty-col">관련 법령·공문이 없습니다</div>';return;}
+    el.innerHTML=laws.map(l=>`
+      <div class="doc-item" data-id="${l.id}">
+        <div class="doc-item-top">
+          <span class="doc-title">${esc(l.title)}</span>
+          <button class="item-del">✕</button>
+        </div>
+        ${l.lawName?`<div class="doc-sub">${esc(l.lawName)}</div>`:''}
+        ${l.fileUrl?`<a class="doc-link" href="${l.fileUrl}" target="_blank">📎 ${esc(l.fileName||'열기')}</a>`:''}
+      </div>`).join('');
+    el.querySelectorAll('.item-del').forEach(b=>b.addEventListener('click',async()=>{
+      if(!confirm('삭제할까요?')) return;
+      await api('deleteLaw',{id:b.closest('.doc-item').dataset.id}); loadLaws();
+    }));
+  }catch(e){el.innerHTML=`<div class="empty-col">오류: ${esc(e.message)}</div>`;}
+}
+
+document.getElementById('addLawBtn').addEventListener('click',()=>{
+  if(!STATE.currentCategoryId) return toast('업무분야를 선택하세요.');
+  openModal(`
+    <h3>법령·공문 추가</h3>
+    <div class="field"><label>제목</label><input type="text" id="m-title" placeholder="예: 학교폭력예방법 시행령 개정 안내"></div>
+    <div class="field"><label>법령명 / 공문번호</label><input type="text" id="m-lawname" placeholder="예: 교육부 OO과-1234"></div>
+    <div class="field">
+      <label>첨부파일 (선택)</label>
+      <div class="file-drop" id="m-filedrop">
+        <div class="drop-icon">📎</div>
+        <div>클릭하거나 드래그하세요</div>
+        <div class="drop-hint">hwp, hwpx, pdf, docx 등</div>
+      </div>
+      <input type="file" id="m-fileinput" style="display:none;">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">취소</button>
+      <button class="btn-primary" id="m-submit">추가</button>
+    </div>`);
+  setupFileDrop();
+  document.getElementById('m-submit').addEventListener('click',async()=>{
+    const title=document.getElementById('m-title').value.trim();
+    if(!title) return toast('제목을 입력하세요.');
+    const fi=await uploadIfFileSelected();
+    await api('addLaw',{categoryId:STATE.currentCategoryId,title,
+      lawName:document.getElementById('m-lawname').value.trim(),
+      fileUrl:fi?fi.fileUrl:'',fileName:fi?fi.fileName:''});
+    closeModal(); toast('추가되었습니다.'); loadLaws();
+  });
+});
+
+/* ── ④ 기타·묻고답하기 ── */
+async function loadQna(){
+  const el=document.getElementById('qnaList');
+  try{
+    const {qna}=await api('getQna',{categoryId:STATE.currentCategoryId});
+    if(!qna.length){el.innerHTML='<div class="empty-col">질문이 없습니다</div>';return;}
+    el.innerHTML=qna.map(q=>`
+      <div class="qna-item" data-id="${q.id}">
+        <div class="qna-q">
+          <span class="qna-badge ${q.status==='답변완료'?'done':''}">${q.status==='답변완료'?'완료':'대기'}</span>${esc(q.question)}
+        </div>
+        <div class="qna-meta">${esc(q.asker)} · ${esc(q.askedAt)}</div>
+        ${q.answer
+          ?`<div class="qna-a"><div class="alabel">답변 · ${esc(q.answerer)}</div>${esc(q.answer)}</div>`
+          :`<div class="qna-ans-row">
+              <input type="text" placeholder="답변 입력" class="qna-ans-input">
+              <button class="btn-secondary qna-ans-btn" style="padding:5px 9px;font-size:11px;">등록</button>
+            </div>`}
+      </div>`).join('');
+    el.querySelectorAll('.qna-ans-btn').forEach(btn=>{
+      btn.addEventListener('click',async()=>{
+        const ans=btn.closest('.qna-item').querySelector('.qna-ans-input').value.trim();
+        if(!ans) return toast('답변을 입력하세요.');
+        await api('addAnswer',{id:btn.closest('.qna-item').dataset.id,answer:ans});
+        toast('답변 등록'); loadQna();
+      });
+    });
+  }catch(e){el.innerHTML=`<div class="empty-col">오류: ${esc(e.message)}</div>`;}
+}
+
+document.getElementById('addQuestionBtn').addEventListener('click',()=>{
+  if(!STATE.currentCategoryId) return toast('업무분야를 선택하세요.');
+  openModal(`
+    <h3>질문하기</h3>
+    <div class="field"><label>질문 내용</label><textarea id="m-question" placeholder="궁금한 점을 남겨주세요."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">취소</button>
+      <button class="btn-primary" id="m-submit">등록</button>
+    </div>`);
+  document.getElementById('m-submit').addEventListener('click',async()=>{
+    const q=document.getElementById('m-question').value.trim();
+    if(!q) return toast('질문을 입력하세요.');
+    await api('addQuestion',{categoryId:STATE.currentCategoryId,question:q});
+    closeModal(); toast('질문이 등록되었습니다.'); loadQna();
+  });
+});
+
+/* ── 단계 관리 ── */
+document.getElementById('manageStageBtn').addEventListener('click',async()=>{
+  const stages=STATE.stagesByCategory[STATE.currentCategoryId]||[];
+  openModal(`
+    <h3>단계 관리</h3><div class="sub">단계를 추가·삭제·순서 변경할 수 있습니다.</div>
+    <div id="stage-edit-list">
+      ${stages.map(s=>`
+        <div class="stage-edit-row" data-id="${s.id}">
+          <input type="text" value="${esc(s.name)}" data-field="name">
+          <button data-action="up">↑</button>
+          <button data-action="down">↓</button>
+          <button data-action="delete">삭제</button>
+        </div>`).join('')}
+    </div>
+    <div class="field" style="margin-top:12px;">
+      <label>새 단계 추가</label>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="m-new-stage" placeholder="예: 사후관리">
+        <button class="btn-secondary" id="m-add-stage" style="flex-shrink:0;">추가</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">닫기</button>
+      <button class="btn-primary seal" id="m-save-stages">이름 변경 저장</button>
+    </div>`);
+
+  document.getElementById('m-add-stage').addEventListener('click',async()=>{
+    const name=document.getElementById('m-new-stage').value.trim();
+    if(!name) return toast('단계명을 입력하세요.');
+    await api('addStage',{categoryId:STATE.currentCategoryId,name});
+    toast('추가되었습니다.'); await refreshStages();
+    document.getElementById('manageStageBtn').click();
+  });
+  document.getElementById('stage-edit-list').querySelectorAll('.stage-edit-row').forEach(row=>{
+    row.querySelector('[data-action="delete"]').addEventListener('click',async()=>{
+      if(!confirm('삭제할까요?')) return;
+      await api('deleteStage',{id:row.dataset.id}); toast('삭제되었습니다.');
+      await refreshStages(); document.getElementById('manageStageBtn').click();
+    });
+    row.querySelector('[data-action="up"]').addEventListener('click',()=>moveStage(row.dataset.id,-1));
+    row.querySelector('[data-action="down"]').addEventListener('click',()=>moveStage(row.dataset.id,1));
+  });
+  document.getElementById('m-save-stages').addEventListener('click',async()=>{
+    for(const row of document.getElementById('stage-edit-list').querySelectorAll('.stage-edit-row')){
+      const name=row.querySelector('[data-field="name"]').value.trim();
+      if(name) await api('updateStage',{id:row.dataset.id,name});
+    }
+    closeModal(); toast('저장되었습니다.'); await refreshStages();
+  });
+});
+
+async function moveStage(id,dir){
+  const stages=[...(STATE.stagesByCategory[STATE.currentCategoryId]||[])];
+  const idx=stages.findIndex(s=>s.id===id); const swap=idx+dir;
+  if(swap<0||swap>=stages.length) return;
+  [stages[idx],stages[swap]]=[stages[swap],stages[idx]];
+  await api('reorderStages',{orderedIds:stages.map(s=>s.id)});
+  await refreshStages(); document.getElementById('manageStageBtn').click();
+}
+async function refreshStages(){
+  const {stages}=await api('getStages',{categoryId:STATE.currentCategoryId});
+  STATE.stagesByCategory[STATE.currentCategoryId]=stages; renderStageNav();
+}
+
+/* ── 할일 일괄 입력 ── */
+document.getElementById('bulkAddBtn').addEventListener('click',()=>{
+  if(!STATE.currentStageId) return toast('단계를 먼저 선택하세요.');
+  openModal(`
+    <h3>할일 여러 개 한꺼번에 입력</h3>
+    <div class="sub">한 줄에 하나씩. <b>|</b> 로 구분하면 [내용 | 비고 | 담당자]로 저장됩니다.</div>
+    <div class="field">
+      <textarea id="m-bulk" style="min-height:160px;" placeholder="신고 접수 즉시 사안 개요 기록 | 48시간 이내 | 담당교사
+분리조치 검토
+사안조사 계획서 작성 | 3일 이내"></textarea>
+    </div>
+    <div class="hint">엑셀·한글에서 복사해 그대로 붙여넣어도 됩니다.</div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">취소</button>
+      <button class="btn-primary seal" id="m-submit">전체 추가</button>
+    </div>`);
+  document.getElementById('m-submit').addEventListener('click',async()=>{
+    const text=document.getElementById('m-bulk').value;
+    if(!text.trim()) return toast('내용을 입력하세요.');
+    const res=await api('bulkAddTasks',{stageId:STATE.currentStageId,text});
+    closeModal(); toast(`${res.count}개 추가됨`); loadTasks();
+  });
+});
+
+/* ── AI 추출 — 파일 드래그&드롭 방식 ── */
+document.getElementById('aiExtractBtn').addEventListener('click',()=>{
+  if(!STATE.currentStageId) return toast('단계를 먼저 선택하세요.');
+  let aiFile=null;
+  openModal(`
+    <h3>파일에서 AI로 할일 추출</h3>
+    <div class="sub">업무 매뉴얼, 공문, 지침 파일을 올리면 AI가 단계별 할일을 자동으로 추출합니다.</div>
+    <div class="ai-drop-zone" id="ai-dz">
+      <div class="dz-icon">📂</div>
+      <div class="dz-title">파일을 드래그하거나 클릭해서 선택</div>
+      <div class="dz-sub">txt, pdf, docx, hwp, hwpx 등 텍스트가 포함된 파일<br>※ hwp/hwpx는 텍스트 추출 가능 시 분석됩니다</div>
+    </div>
+    <input type="file" id="ai-file-input" style="display:none;" accept=".txt,.pdf,.docx,.doc,.hwp,.hwpx,.md">
+    <div id="m-extract-result"></div>
+    <div class="modal-actions" id="ai-actions">
+      <button class="btn-secondary" onclick="closeModal()">취소</button>
+      <button class="btn-primary seal" id="m-extract" disabled style="opacity:.4">AI로 추출</button>
+    </div>`);
+
+  const dz=document.getElementById('ai-dz');
+  const fi=document.getElementById('ai-file-input');
+
+  dz.addEventListener('click',()=>fi.click());
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+  dz.addEventListener('drop',e=>{
+    e.preventDefault(); dz.classList.remove('drag-over');
+    if(e.dataTransfer.files.length) setAiFile(e.dataTransfer.files[0]);
+  });
+  fi.addEventListener('change',()=>{ if(fi.files.length) setAiFile(fi.files[0]); });
+
+  function setAiFile(file){
+    aiFile=file;
+    dz.classList.add('has-file');
+    dz.querySelector('.dz-icon').textContent='✅';
+    dz.querySelector('.dz-title').textContent=file.name;
+    dz.querySelector('.dz-sub').textContent=`${(file.size/1024).toFixed(1)} KB · 클릭하면 다시 선택`;
+    const btn=document.getElementById('m-extract');
+    btn.disabled=false; btn.style.opacity='1';
+  }
+
+  document.getElementById('m-extract').addEventListener('click',async()=>{
+    if(!aiFile) return toast('파일을 먼저 선택하세요.');
+    const box=document.getElementById('m-extract-result');
+    box.innerHTML='<div class="loading-text" style="margin-top:14px;"><span class="spinner"></span>파일을 읽고 AI가 분석 중입니다...</div>';
+    document.getElementById('m-extract').disabled=true;
+    try{
+      const sourceText=await readFileAsText(aiFile);
+      if(!sourceText.trim()) throw new Error('파일에서 텍스트를 추출할 수 없습니다. txt 또는 pdf(텍스트 PDF) 파일을 사용해주세요.');
+      const {extracted}=await api('extractTasksFromSource',{
+        sourceText:sourceText.slice(0,12000),
+        categoryId:STATE.currentCategoryId,
+        stageId:STATE.currentStageId
+      });
+      box.innerHTML=`
+        <div style="margin-top:14px;font-size:12.5px;font-weight:600;">추출된 할일 ${extracted.length}개 (체크된 항목만 저장됩니다)</div>
+        <div class="ai-result-list">
+          ${extracted.map((t,i)=>`
+            <label class="ai-result-item">
+              <input type="checkbox" checked data-idx="${i}">
+              <span>${esc(t.content)}${t.note?` <span style="color:var(--muted)">(${esc(t.note)})</span>`:''}</span>
+            </label>`).join('')}
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="closeModal()">닫기</button>
+          <button class="btn-primary seal" id="m-confirm">선택 항목 저장</button>
+        </div>`;
+      document.getElementById('ai-actions').style.display='none';
+      document.getElementById('m-confirm').addEventListener('click',async()=>{
+        const checked=[...box.querySelectorAll('input[type=checkbox]:checked')].map(c=>extracted[c.dataset.idx]);
+        if(!checked.length) return toast('저장할 항목을 선택하세요.');
+        await api('confirmExtractedTasks',{stageId:STATE.currentStageId,tasks:checked});
+        closeModal(); toast(`${checked.length}개 저장됨`); loadTasks();
+      });
+    }catch(e){
+      box.innerHTML=`<div style="margin-top:14px;padding:12px;background:var(--seal-soft);border-radius:8px;font-size:12.5px;color:var(--seal);">⚠️ ${esc(e.message)}</div>`;
+      document.getElementById('m-extract').disabled=false;
+    }
+  });
+});
+
+/**
+ * 파일을 텍스트로 읽기
+ * - txt/md: 그대로 읽기
+ * - pdf: PDF.js 없이 바이너리에서 스트림 텍스트 추출 시도
+ * - docx: xml 파싱으로 w:t 태그 추출
+ * - hwp/hwpx: 가능한 경우 텍스트 부분 추출
+ */
+function readFileAsText(file){
+  return new Promise((resolve,reject)=>{
+    const name=file.name.toLowerCase();
+    const reader=new FileReader();
+
+    if(name.endsWith('.txt')||name.endsWith('.md')||name.endsWith('.csv')){
+      reader.onload=e=>resolve(e.target.result);
+      reader.onerror=()=>reject(new Error('파일 읽기 실패'));
+      reader.readAsText(file,'utf-8');
+      return;
+    }
+
+    // 바이너리로 읽어서 텍스트 추출 시도 (pdf, docx, hwpx 등)
+    reader.onload=e=>{
+      const ab=e.target.result;
+      const bytes=new Uint8Array(ab);
+
+      // ── docx / hwpx (zip 기반 xml) 텍스트 추출 ──
+      if(name.endsWith('.docx')||name.endsWith('.hwpx')){
+        try{
+          const text=extractZipXmlText(bytes,name.endsWith('.docx')?'word/document.xml':'Contents/section0.xml');
+          if(text.trim()) return resolve(text);
+        }catch(err){}
+      }
+
+      // ── PDF 기본 텍스트 스트림 추출 ──
+      if(name.endsWith('.pdf')){
+        try{
+          const raw=new TextDecoder('latin1').decode(bytes);
+          const chunks=[];
+          const re=/BT[\s\S]*?ET/g; let m;
+          while((m=re.exec(raw))!==null){
+            const tj=/\(([^)]*)\)\s*T[jJ]/g; let tj_m;
+            while((tj_m=tj.exec(m[0]))!==null) chunks.push(tj_m[1]);
+          }
+          if(chunks.length>0) return resolve(chunks.join(' '));
+        }catch(err){}
+      }
+
+      // ── hwp (바이너리) - 가독 텍스트 부분만 추출 ──
+      if(name.endsWith('.hwp')){
+        try{
+          const raw=new TextDecoder('utf-16le').decode(bytes.slice(0,Math.min(bytes.length,200000)));
+          const visible=raw.replace(/[^\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uD7B0-\uD7FF\w\s.,!?:;\-()]/g,' ').replace(/\s+/g,' ').trim();
+          if(visible.length>100) return resolve(visible);
+        }catch(err){}
+      }
+
+      // 최후 수단: UTF-8 텍스트로 읽기
+      try{
+        const text=new TextDecoder('utf-8',{fatal:false}).decode(bytes);
+        const printable=text.replace(/[^\uAC00-\uD7A3\u1100-\u11FF\w\s.,!?:;\-()]/g,' ').replace(/\s+/g,' ').trim();
+        if(printable.length>50) return resolve(printable);
+      }catch(err){}
+
+      reject(new Error('이 파일 형식에서는 텍스트를 추출하기 어렵습니다. txt 파일로 변환하거나, 내용을 복사해서 txt 파일로 저장 후 다시 시도해주세요.'));
+    };
+    reader.onerror=()=>reject(new Error('파일 읽기 실패'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function extractZipXmlText(bytes, targetEntry){
+  // ZIP local file header 파싱 - PK\x03\x04 시그니처 찾기
+  const sig=[0x50,0x4B,0x03,0x04];
+  let pos=0;
+  const texts=[];
+  while(pos<bytes.length-30){
+    if(bytes[pos]===sig[0]&&bytes[pos+1]===sig[1]&&bytes[pos+2]===sig[2]&&bytes[pos+3]===sig[3]){
+      const fnLen=bytes[pos+26]|(bytes[pos+27]<<8);
+      const extraLen=bytes[pos+28]|(bytes[pos+29]<<8);
+      const compMethod=bytes[pos+8]|(bytes[pos+9]<<8);
+      const compSize=bytes[pos+18]|(bytes[pos+19]<<8)|(bytes[pos+20]<<16)|(bytes[pos+21]<<24);
+      const fnBytes=bytes.slice(pos+30,pos+30+fnLen);
+      const fn=new TextDecoder().decode(fnBytes);
+      const dataStart=pos+30+fnLen+extraLen;
+      if(compMethod===0&&(fn===targetEntry||fn.includes('document.xml')||fn.includes('section'))){
+        const raw=new TextDecoder('utf-8',{fatal:false}).decode(bytes.slice(dataStart,dataStart+compSize));
+        const matches=raw.match(/<w:t[^>]*>([^<]+)<\/w:t>|<t>([^<]+)<\/t>/g)||[];
+        texts.push(...matches.map(m=>m.replace(/<[^>]+>/g,'')));
+      }
+      pos=dataStart+Math.max(0,compSize);
+    } else { pos++; }
+  }
+  return texts.join(' ');
+}
+
+/* ── 업무분야 CRUD ── */
+document.getElementById('addCategoryBtn').addEventListener('click',()=>{
+  openModal(`
+    <h3>업무분야 추가</h3>
+    <div class="field"><label>업무분야명</label><input type="text" id="m-name" placeholder="예: 생활지도, 방과후학교"></div>
+    <div class="field"><label>담당자 (선택)</label><input type="text" id="m-owner"></div>
+    <div class="field"><label>설명 (선택)</label><textarea id="m-desc" style="min-height:55px;"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">취소</button>
+      <button class="btn-primary seal" id="m-submit">추가</button>
+    </div>`);
+  document.getElementById('m-submit').addEventListener('click',async()=>{
+    const name=document.getElementById('m-name').value.trim();
+    if(!name) return toast('업무분야명을 입력하세요.');
+    try{
+      const res=await api('addCategory',{name,
+        owner:document.getElementById('m-owner').value.trim(),
+        desc:document.getElementById('m-desc').value.trim()});
+      closeModal(); toast('추가되었습니다.');
+      const data=await api('getAll');
+      STATE.categories=data.categories; STATE.stagesByCategory=data.stagesByCategory;
+      renderCategoryList(); selectCategory(res.id);
+    }catch(e){toast('실패: '+e.message);}
+  });
+});
+
+document.getElementById('editCategoryBtn').addEventListener('click',()=>{
+  const cat=STATE.categories.find(c=>c.id===STATE.currentCategoryId);
+  openModal(`
+    <h3>업무분야 수정</h3>
+    <div class="field"><label>업무분야명</label><input type="text" id="m-name" value="${esc(cat.name)}"></div>
+    <div class="field"><label>담당자</label><input type="text" id="m-owner" value="${esc(cat.owner||'')}"></div>
+    <div class="field"><label>설명</label><textarea id="m-desc" style="min-height:55px;">${esc(cat.desc||'')}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">취소</button>
+      <button class="btn-primary seal" id="m-submit">저장</button>
+    </div>`);
+  document.getElementById('m-submit').addEventListener('click',async()=>{
+    await api('updateCategory',{id:cat.id,
+      name:document.getElementById('m-name').value.trim(),
+      owner:document.getElementById('m-owner').value.trim(),
+      desc:document.getElementById('m-desc').value.trim()});
+    closeModal(); toast('수정되었습니다.');
+    const data=await api('getAll');
+    STATE.categories=data.categories; STATE.stagesByCategory=data.stagesByCategory;
+    renderCategoryList(); selectCategory(cat.id);
+  });
+});
+
+document.getElementById('deleteCategoryBtn').addEventListener('click',async()=>{
+  const cat=STATE.categories.find(c=>c.id===STATE.currentCategoryId);
+  if(!confirm(`"${cat.name}" 분야를 숨기겠습니까? (데이터 보존)`)) return;
+  await api('deleteCategory',{id:cat.id}); toast('삭제되었습니다.');
+  const data=await api('getAll');
+  STATE.categories=data.categories; STATE.stagesByCategory=data.stagesByCategory;
+  renderCategoryList();
+  if(STATE.categories.length>0) selectCategory(STATE.categories[0].id);
+  else{
+    document.getElementById('stageNav').style.display='none';
+    document.getElementById('contentArea').style.display='none';
+    document.getElementById('emptyMain').style.display='';
+  }
+});
+
+/* ── 학교명 변경 ── */
+document.getElementById('schoolNameLabel').addEventListener('click',()=>{
+  openModal(`
+    <h3>학교명 변경</h3>
+    <div class="sub">모든 사용자에게 동일하게 표시됩니다 (관리자만 가능).</div>
+    <div class="field"><label>학교명</label><input type="text" id="m-school" value="${esc(STATE.schoolName)}" placeholder="예: 구례중학교"></div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">취소</button>
+      <button class="btn-primary seal" id="m-submit" ${!STATE.isAdmin?'disabled style="opacity:.4"':''}>저장</button>
+    </div>`);
+  document.getElementById('m-submit').addEventListener('click',async()=>{
+    const name=document.getElementById('m-school').value.trim();
+    if(!name) return toast('학교명을 입력하세요.');
+    await api('updateSchoolName',{schoolName:name});
+    STATE.schoolName=name;
+    document.getElementById('schoolNameLabel').textContent=name;
+    closeModal(); toast('변경되었습니다.');
+  });
+});
+
+/* ── 파일 업로드 (일반 첨부) ── */
+let selectedFile=null;
+function setupFileDrop(){
+  selectedFile=null;
+  const drop=document.getElementById('m-filedrop');
+  const input=document.getElementById('m-fileinput');
+  drop.addEventListener('click',()=>input.click());
+  drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag-over');});
+  drop.addEventListener('dragleave',()=>drop.classList.remove('drag-over'));
+  drop.addEventListener('drop',e=>{
+    e.preventDefault(); drop.classList.remove('drag-over');
+    if(e.dataTransfer.files.length) setDropFile(e.dataTransfer.files[0]);
+  });
+  input.addEventListener('change',()=>{ if(input.files.length) setDropFile(input.files[0]); });
+
+  function setDropFile(file){
+    selectedFile=file;
+    drop.classList.add('has-file');
+    drop.querySelector('.drop-icon').textContent='✅';
+    drop.innerHTML=`<div class="drop-icon">✅</div><div>${esc(file.name)}</div><div class="drop-hint">${(file.size/1024).toFixed(1)} KB · 클릭하면 다시 선택</div>`;
+    drop.addEventListener('click',()=>input.click(),{once:true});
+  }
+}
+
+function fileToBase64(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>res(e.target.result.split(',')[1]);
+    r.onerror=rej; r.readAsDataURL(file);
+  });
+}
+
+async function uploadIfFileSelected(){
+  if(!selectedFile) return null;
+  const base64Data=await fileToBase64(selectedFile);
+  const cat=STATE.categories.find(c=>c.id===STATE.currentCategoryId);
+  try{
+    const res=await fetch(API_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'uploadFile',payload:{
+        fileName:selectedFile.name,
+        mimeType:selectedFile.type||'application/octet-stream',
+        base64Data,categoryName:cat?cat.name:''
+      }})
+    });
+    const data=JSON.parse(await res.text());
+    if(!data.ok) throw new Error(data.error);
+    return data;
+  }catch(e){ toast('파일 업로드 실패: '+e.message); return null; }
+}
+
+/* ── 모달 ── */
+function openModal(html){
+  document.getElementById('modalBody').innerHTML=html;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('show');
+  selectedFile=null;
+}
+document.getElementById('modalOverlay').addEventListener('click',e=>{
+  if(e.target.id==='modalOverlay') closeModal();
+});
+
+init();
 </script>
 </body>
 </html>
