@@ -452,7 +452,7 @@ textarea{resize:vertical;min-height:76px;}
 
 <script>
 /* ── 설정 ── */
-const API_URL = 'https://script.google.com/macros/s/AKfycbwx0N3Xrhb_K-IXOcopJkLDkamdpQsX-jDFrcNRl415r2INfVdWmUQQeID5wEfH93vv/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyRL9VSd57QsTlXvSGL1CqcFsH859noxR83ItSdw7jDP806OI51lBTPGUE7zJnxno6L/exec';
 // 관리자 비밀번호 목록 (Apps Script ADMIN_EMAILS 와 별개로 클라이언트 측 간단 인증)
 // 실제 배포 시 이 목록을 원하는 이메일+비밀번호 쌍으로 수정하세요.
 const ADMIN_ACCOUNTS = [
@@ -1228,20 +1228,45 @@ function fileToBase64(file){
     r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);
   });
 }
+/**
+ * 파일 업로드 — JSONP 청크 방식 (CORS 완전 우회)
+ * base64 데이터를 30KB 청크로 나눠서 순차적으로 JSONP GET으로 전송
+ * 마지막 청크에서 Drive에 파일 조합 저장
+ */
 async function uploadIfFileSelected(){
-  if(!selectedFile)return null;
-  const base64Data=await fileToBase64(selectedFile);
-  const cat=STATE.categories.find(c=>c.id===STATE.currentCategoryId);
+  if(!selectedFile) return null;
+  const base64Data = await fileToBase64(selectedFile);
+  const cat = STATE.categories.find(c=>c.id===STATE.currentCategoryId);
+  const CHUNK = 30000; // 30KB per chunk (URL 길이 한계 고려)
+  const total = Math.ceil(base64Data.length / CHUNK);
+  const uploadId = 'up_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+
+  toast('파일 업로드 중... (0/' + total + ')');
+
   try{
-    const res=await fetch(API_URL,{method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({action:'uploadFile',payload:{
-        fileName:selectedFile.name,mimeType:selectedFile.type||'application/octet-stream',
-        base64Data,categoryName:cat?cat.name:''}})});
-    const data=JSON.parse(await res.text());
-    if(!data.ok)throw new Error(data.error);
-    return data;
-  }catch(e){toast('파일 업로드 실패: '+e.message);return null;}
+    let result = null;
+    for(let i=0; i<total; i++){
+      const chunk = base64Data.slice(i*CHUNK, (i+1)*CHUNK);
+      const isLast = (i === total-1);
+      const data = await api('uploadChunk', {
+        uploadId,
+        chunkIndex: i,
+        totalChunks: total,
+        chunk,
+        isLast,
+        fileName: selectedFile.name,
+        mimeType: selectedFile.type || 'application/octet-stream',
+        categoryName: cat ? cat.name : ''
+      });
+      if(isLast) result = data;
+      if(total > 1) toast(`파일 업로드 중... (${i+1}/${total})`);
+    }
+    toast('파일 업로드 완료!');
+    return result;
+  }catch(e){
+    toast('파일 업로드 실패: ' + e.message);
+    return null;
+  }
 }
 
 /* ── 모달 ── */
