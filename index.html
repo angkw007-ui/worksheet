@@ -194,6 +194,9 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 .col-law  .dl-btn{color:var(--sky); border-color:var(--sky); background:var(--sky-soft);}
 .dl-btn:hover{opacity:.8;}
 
+/* 다운로드 버튼 — 누구나 항상 표시 */
+.dl-btn{display:inline-flex !important;}
+
 /* 삭제 버튼 — 관리자만 */
 .item-del{background:none;border:none;color:var(--muted);cursor:pointer;
   font-size:12px;padding:2px 4px;opacity:0;transition:opacity .1s;}
@@ -438,11 +441,11 @@ textarea{resize:vertical;min-height:76px;}
 
 <script>
 /* ── 설정 ── */
-const API_URL = 'https://script.google.com/macros/s/AKfycbwX4WeIffraU2Dymz2ZRgNYKqJPzrnkbd5vYLSQUPef1dZRvs0c7mmJ_0zCcalR8eXj/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyRL9VSd57QsTlXvSGL1CqcFsH859noxR83ItSdw7jDP806OI51lBTPGUE7zJnxno6L/exec';
 // 관리자 비밀번호 목록 (Apps Script ADMIN_EMAILS 와 별개로 클라이언트 측 간단 인증)
 // 실제 배포 시 이 목록을 원하는 이메일+비밀번호 쌍으로 수정하세요.
 const ADMIN_ACCOUNTS = [
-  { email: 'angkw007@gmail.com', password: 'gurye2024!' }
+  { email: 'angkw007@gmail.com', password: '0425' }
 ];
 
 let STATE = {
