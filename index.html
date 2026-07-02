@@ -194,19 +194,28 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 .col-law  .dl-btn{color:var(--sky); border-color:var(--sky); background:var(--sky-soft);}
 .dl-btn:hover{opacity:.8;}
 
-/* 다운로드 버튼 — 누구나 항상 표시 */
-.dl-btn{display:inline-flex !important;}
+/* 다운로드 버튼 — 누구나 항상 표시 (관리자 여부 무관) */
+.dl-btn{
+  display:inline-flex !important;
+  visibility:visible !important;
+  align-items:center;gap:5px;
+  font-size:11.5px;font-weight:600;padding:5px 11px;border-radius:6px;
+  text-decoration:none;border:1.5px solid;cursor:pointer;
+  background:none;font-family:inherit;margin-top:4px;
+}
+.col-doc .dl-btn{color:var(--pine);border-color:var(--pine);background:var(--pine-soft);}
+.col-law .dl-btn{color:var(--sky); border-color:var(--sky); background:var(--sky-soft);}
+.dl-btn:hover{opacity:.75;}
 
 /* 삭제 버튼 — 관리자만 */
-.item-del{background:none;border:none;color:var(--muted);cursor:pointer;
-  font-size:12px;padding:2px 4px;opacity:0;transition:opacity .1s;}
-.doc-item:hover .item-del{opacity:1;}
+.item-del{
+  background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:12px;padding:2px 5px;border-radius:4px;
+  display:none;flex-shrink:0;
+}
 .item-del:hover{color:var(--seal);}
-/* 비관리자엔 숨김 */
-.item-del{display:none;}
 .is-admin .item-del{display:block;}
-
-/* 유형 태그 */
+.is-admin .doc-item:hover .item-del{opacity:1;}
 .type-tag{display:inline-block;font-size:9.5px;font-weight:700;padding:2px 7px;
   border-radius:4px;margin-right:4px;vertical-align:middle;}
 .type-tag.결재예시{background:var(--pine-soft);color:var(--pine);}
@@ -219,7 +228,9 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 }
 .memo-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);}
 .memo-head{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;}
-.memo-content{font-size:12.5px;line-height:1.5;white-space:pre-wrap;margin-top:4px;}
+.memo-content{font-size:12.5px;line-height:1.5;white-space:pre-wrap;margin-top:4px;word-break:break-all;}
+.memo-content a{color:var(--sky);text-decoration:underline;}
+.memo-content a:hover{opacity:.75;}
 .memo-meta{font-size:10.5px;color:var(--muted);margin-top:4px;}
 .memo-actions{display:flex;gap:2px;flex-shrink:0;}
 .memo-act-btn{background:none;border:none;color:var(--muted);cursor:pointer;
@@ -690,11 +701,12 @@ document.getElementById('addTaskBtn').addEventListener('click',()=>{
   });
 });
 
-/* ── ② 결재예시 및 서식 (다운로드 누구나, 추가·삭제 관리자) ── */
+/* ── ② 결재예시 및 서식 (단계별, 다운로드 누구나) ── */
 async function loadDocs(){
   const el=document.getElementById('docList');
+  if(!STATE.currentStageId){el.innerHTML='<div class="empty-col">단계를 선택하세요</div>';return;}
   try{
-    const {docs}=await api('getDocs',{categoryId:STATE.currentCategoryId});
+    const {docs}=await api('getDocs',{stageId:STATE.currentStageId});
     if(!docs.length){el.innerHTML='<div class="empty-col">결재예시·서식이 없습니다</div>';return;}
     el.innerHTML=docs.map(d=>`
       <div class="doc-item" data-id="${d.id}">
@@ -706,12 +718,10 @@ async function loadDocs(){
           <button class="item-del">✕</button>
         </div>
         ${d.desc?`<div class="doc-sub">${esc(d.desc)}</div>`:''}
-        ${d.fileUrl?`
-          <div class="doc-foot">
-            <a class="dl-btn" href="${d.downloadUrl||d.fileUrl}" target="_blank" download>
-              ⬇ ${esc(d.fileName||'다운로드')}
-            </a>
-          </div>`:''}
+        ${d.fileUrl
+          ?`<a class="dl-btn" href="${esc(d.downloadUrl||d.fileUrl)}" target="_blank">⬇ ${esc(d.fileName||'다운로드')}</a>`
+          :`<span class="doc-sub" style="color:var(--muted);font-size:11px;">첨부파일 없음</span>`
+        }
       </div>`).join('');
     el.querySelectorAll('.item-del').forEach(b=>b.addEventListener('click',async()=>{
       if(!STATE.isAdmin)return toast('관리자만 삭제할 수 있습니다.');
@@ -750,7 +760,7 @@ document.getElementById('addDocBtn').addEventListener('click',()=>{
     const title=document.getElementById('m-title').value.trim();
     if(!title)return toast('제목을 입력하세요.');
     const fi=await uploadIfFileSelected();
-    await api('addDoc',{categoryId:STATE.currentCategoryId,title,
+    await api('addDoc',{categoryId:STATE.currentCategoryId,stageId:STATE.currentStageId,title,
       type:document.getElementById('m-type').value,
       desc:document.getElementById('m-desc').value.trim(),
       fileUrl:fi?fi.fileUrl:'',fileName:fi?fi.fileName:'',
@@ -820,14 +830,23 @@ document.getElementById('addLawBtn').addEventListener('click',()=>{
   });
 });
 
-/* ── ④ 메모 (QnA 대체, 누구나 작성/관리자만 수정·삭제) ── */
+/* URL을 클릭 가능한 링크로 자동 변환 */
+function linkify(text){
+  const escaped=esc(text);
+  return escaped.replace(
+    /(https?:\/\/[^\s<>"]+)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+  );
+}
+
+/* ── ④ 메모 (누구나 작성, 관리자만 수정·삭제) ── */
 async function loadMemos(){
   const el=document.getElementById('memoList');
   try{
     const {qna}=await api('getQna',{categoryId:STATE.currentCategoryId});
     if(!qna.length){el.innerHTML='<div class="empty-col">메모가 없습니다</div>';return;}
     el.innerHTML=qna.map(m=>`
-      <div class="memo-item" data-id="${m.id}">
+      <div class="memo-item" data-id="${m.id}" data-text="${esc(m.question)}">
         <div class="memo-head">
           <span style="font-size:11px;font-weight:700;color:var(--violet);">📌 메모</span>
           <div class="memo-actions">
@@ -835,13 +854,13 @@ async function loadMemos(){
             <button class="memo-act-btn del" data-action="delete">✕</button>
           </div>
         </div>
-        <div class="memo-content">${esc(m.question)}</div>
+        <div class="memo-content">${linkify(m.question)}</div>
         <div class="memo-meta">${esc(m.asker)} · ${esc(m.askedAt)}</div>
       </div>`).join('');
 
     el.querySelectorAll('[data-action="edit"]').forEach(b=>b.addEventListener('click',()=>{
       const item=b.closest('.memo-item');
-      const content=item.querySelector('.memo-content').textContent;
+      const content=item.dataset.text||'';  // 원본 텍스트 사용 (링크 HTML 아님)
       openModal(`
         <h3>메모 수정</h3>
         <div class="field"><textarea id="m-memo" style="min-height:100px;">${esc(content)}</textarea></div>
@@ -852,7 +871,6 @@ async function loadMemos(){
       document.getElementById('m-submit').addEventListener('click',async()=>{
         const text=document.getElementById('m-memo').value.trim();
         if(!text)return toast('내용을 입력하세요.');
-        // QnA의 question 필드를 메모 내용으로 사용
         await api('addAnswer',{id:item.dataset.id,answer:text});
         closeModal();toast('수정되었습니다.');loadMemos();
       });
