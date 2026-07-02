@@ -51,9 +51,29 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 .btn-ghost{background:none;border:1px dashed var(--line);color:var(--muted);
   padding:8px 10px;border-radius:7px;font-size:12px;cursor:pointer;text-align:left;width:100%;font-family:inherit;}
 .btn-ghost:hover{border-color:var(--seal);color:var(--seal);}
-.whoami{font-size:10px;color:var(--muted);padding:0 4px;}
 
-/* ── 메인: 단계 세로 네비 + 4열 그리드 ── */
+/* 관리자 로그인 패널 */
+.admin-panel{
+  background:var(--white);border:1px solid var(--line);border-radius:8px;padding:10px;
+  display:flex;flex-direction:column;gap:6px;
+}
+.admin-status{display:flex;align-items:center;gap:6px;font-size:11px;}
+.admin-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.admin-dot.on{background:#2e9e5b;}
+.admin-name{font-weight:600;color:var(--ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.admin-sub{color:var(--muted);}
+.btn-admin-login{
+  background:var(--seal);color:#fff;border:none;border-radius:6px;
+  padding:6px 10px;font-size:11.5px;font-weight:600;cursor:pointer;font-family:inherit;width:100%;
+}
+.btn-admin-login:hover{opacity:.88;}
+.btn-admin-logout{
+  background:none;border:1px solid var(--line);border-radius:6px;color:var(--muted);
+  padding:5px 10px;font-size:11px;cursor:pointer;font-family:inherit;width:100%;
+}
+.btn-admin-logout:hover{border-color:var(--seal);color:var(--seal);}
+
+/* ── 메인 ── */
 .main{display:flex;min-height:100vh;overflow:hidden;}
 
 /* 단계 세로 네비 */
@@ -80,7 +100,7 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
   border-radius:6px;padding:6px 8px;cursor:pointer;width:100%;font-family:inherit;text-align:left;}
 .stage-manage-btn:hover{border-color:var(--seal);color:var(--seal);}
 
-/* 컨텐츠 */
+/* 콘텐츠 */
 .content-area{flex:1;overflow:auto;padding:18px 16px 40px;}
 
 .cat-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:12px;}
@@ -90,8 +110,10 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 .icon-btn{background:var(--white);border:1px solid var(--line);border-radius:7px;
   padding:5px 11px;font-size:11.5px;cursor:pointer;font-family:inherit;}
 .icon-btn:hover{border-color:var(--seal);color:var(--seal);}
+.icon-btn[data-admin-only]{display:none;}
+.is-admin .icon-btn[data-admin-only]{display:inline-block;}
 
-/* 선택 단계 배너 */
+/* 단계 배너 */
 .stage-banner{
   display:flex;align-items:center;gap:10px;
   background:var(--seal-soft);border:1px solid rgba(168,51,63,.15);
@@ -103,11 +125,7 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 .stage-banner .hint{font-size:11px;color:var(--muted);margin-left:auto;}
 
 /* ── 4열 그리드 ── */
-.col-grid{
-  display:grid;
-  grid-template-columns:repeat(4,minmax(210px,1fr));
-  gap:12px;min-width:800px;
-}
+.col-grid{display:grid;grid-template-columns:repeat(4,minmax(210px,1fr));gap:12px;min-width:800px;}
 .col-card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
   display:flex;flex-direction:column;overflow:hidden;}
 .col-head{
@@ -117,20 +135,22 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 }
 .col-head .col-icon{font-size:14px;margin-right:5px;}
 .col-head .add-btn{background:none;border:none;font-size:18px;cursor:pointer;
-  line-height:1;color:inherit;opacity:.5;padding:0 2px;}
+  line-height:1;color:inherit;opacity:.5;padding:0 2px;display:none;}
 .col-head .add-btn:hover{opacity:1;}
+.is-admin .col-head .add-btn{display:block;}
 .col-body{padding:10px;flex:1;display:flex;flex-direction:column;gap:6px;min-height:140px;}
 
 /* 열 색상 */
-.col-task .col-head{background:rgba(168,51,63,.07);  color:var(--seal);}
-.col-doc  .col-head{background:rgba(60,90,78,.07);   color:var(--pine);}
-.col-law  .col-head{background:rgba(44,95,138,.07);  color:var(--sky);}
-.col-etc  .col-head{background:rgba(90,78,124,.07);  color:var(--violet);}
+.col-task .col-head{background:rgba(168,51,63,.07);color:var(--seal);}
+.col-doc  .col-head{background:rgba(60,90,78,.07); color:var(--pine);}
+.col-law  .col-head{background:rgba(44,95,138,.07);color:var(--sky);}
+.col-memo .col-head{background:rgba(90,78,124,.07);color:var(--violet);}
 
-/* 할일 아이템 */
+/* ── 해야할일 ── */
 .task-item{
-  display:flex;align-items:flex-start;gap:8px;padding:8px 10px;
+  display:flex;align-items:flex-start;gap:8px;padding:9px 10px;
   border-radius:7px;border:1px solid var(--line);background:var(--paper);
+  transition:box-shadow .1s;
 }
 .task-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);}
 .task-item.done{opacity:.45;}
@@ -144,50 +164,66 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 .task-content{font-size:12.5px;font-weight:500;line-height:1.45;}
 .task-item.done .task-content{text-decoration:line-through;}
 .task-note{font-size:10.5px;color:var(--muted);margin-top:2px;}
-.item-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;
-  padding:1px;opacity:0;transition:opacity .1s;}
-.task-item:hover .item-del,.doc-item:hover .item-del{opacity:1;}
-.item-del:hover{color:var(--seal);}
+/* 수정/삭제 버튼 — 누구나 완료 체크, 수정·삭제는 관리자만 */
+.task-actions{display:flex;gap:2px;flex-shrink:0;opacity:0;transition:opacity .1s;}
+.task-item:hover .task-actions{opacity:1;}
+.task-act-btn{background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:11px;padding:3px 5px;border-radius:4px;}
+.task-act-btn:hover{background:var(--paper-deep);color:var(--ink);}
+.task-act-btn.del:hover{color:var(--seal);}
+.is-admin .task-actions{display:flex;}
 
-/* 문서/법령/기타 아이템 */
+/* ── 문서 카드 공통 ── */
 .doc-item{
-  padding:8px 10px;border-radius:7px;border:1px solid var(--line);
-  background:var(--paper);font-size:12.5px;display:flex;flex-direction:column;gap:3px;
+  padding:9px 11px;border-radius:7px;border:1px solid var(--line);
+  background:var(--paper);font-size:12.5px;display:flex;flex-direction:column;gap:4px;
 }
 .doc-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);}
 .doc-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:4px;}
 .doc-title{font-weight:600;line-height:1.4;flex:1;}
 .doc-sub{font-size:10.5px;color:var(--muted);}
-.doc-file-tag{
-  display:inline-block;font-size:9.5px;font-weight:700;padding:2px 6px;
-  border-radius:4px;background:var(--gold-soft);color:var(--gold);margin-bottom:2px;
-}
-.doc-link{font-size:11px;font-weight:600;text-decoration:none;}
-.col-doc .doc-link{color:var(--pine);}
-.col-law .doc-link{color:var(--sky);}
-.col-etc .doc-link{color:var(--violet);}
-.doc-link:hover{text-decoration:underline;}
+.doc-foot{display:flex;align-items:center;justify-content:space-between;margin-top:2px;}
 
-/* QnA */
-.qna-item{padding:8px 10px;border-radius:7px;border:1px solid var(--line);
-  background:var(--paper);font-size:12.5px;}
-.qna-q{font-weight:600;line-height:1.4;}
-.qna-meta{font-size:10.5px;color:var(--muted);margin-top:2px;}
-.qna-a{margin-top:6px;padding:6px 8px;background:var(--pine-soft);border-radius:6px;font-size:11.5px;}
-.qna-a .alabel{font-size:10px;color:var(--pine);font-weight:700;margin-bottom:2px;}
-.qna-ans-row{display:flex;gap:5px;margin-top:6px;}
-.qna-ans-row input{flex:1;font-size:12px;}
-.qna-badge{display:inline-block;font-size:9.5px;font-weight:700;padding:2px 6px;
-  border-radius:4px;margin-right:4px;background:var(--gold-soft);color:var(--gold);}
-.qna-badge.done{background:var(--pine-soft);color:var(--pine);}
-
-/* 유형 태그 (결재예시/서식 구분) */
-.type-tag{
-  display:inline-block;font-size:9.5px;font-weight:700;padding:2px 7px;
-  border-radius:4px;margin-bottom:3px;
+/* 다운로드 버튼 — 누구나 */
+.dl-btn{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:600;padding:4px 9px;border-radius:5px;
+  text-decoration:none;border:1px solid;cursor:pointer;background:none;font-family:inherit;
 }
+.col-doc  .dl-btn{color:var(--pine);border-color:var(--pine);background:var(--pine-soft);}
+.col-law  .dl-btn{color:var(--sky); border-color:var(--sky); background:var(--sky-soft);}
+.dl-btn:hover{opacity:.8;}
+
+/* 삭제 버튼 — 관리자만 */
+.item-del{background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:12px;padding:2px 4px;opacity:0;transition:opacity .1s;}
+.doc-item:hover .item-del{opacity:1;}
+.item-del:hover{color:var(--seal);}
+/* 비관리자엔 숨김 */
+.item-del{display:none;}
+.is-admin .item-del{display:block;}
+
+/* 유형 태그 */
+.type-tag{display:inline-block;font-size:9.5px;font-weight:700;padding:2px 7px;
+  border-radius:4px;margin-right:4px;vertical-align:middle;}
 .type-tag.결재예시{background:var(--pine-soft);color:var(--pine);}
 .type-tag.서식{background:var(--gold-soft);color:var(--gold);}
+
+/* ── 메모 열 ── */
+.memo-item{
+  padding:9px 11px;border-radius:7px;border:1px solid var(--line);
+  background:var(--paper);font-size:12.5px;
+}
+.memo-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.memo-head{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;}
+.memo-content{font-size:12.5px;line-height:1.5;white-space:pre-wrap;margin-top:4px;}
+.memo-meta{font-size:10.5px;color:var(--muted);margin-top:4px;}
+.memo-actions{display:flex;gap:2px;flex-shrink:0;}
+.memo-act-btn{background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:11px;padding:3px 5px;border-radius:4px;display:none;}
+.is-admin .memo-act-btn{display:block;}
+.memo-act-btn:hover{background:var(--paper-deep);color:var(--ink);}
+.memo-act-btn.del:hover{color:var(--seal);}
 
 /* 빈 상태 */
 .empty-col{font-size:11.5px;color:var(--muted);text-align:center;padding:18px 8px;line-height:1.6;}
@@ -209,9 +245,10 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 .btn-secondary{background:var(--white);border:1px solid var(--line);border-radius:7px;
   padding:8px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--ink);}
 .btn-secondary:hover{border-color:var(--ink);}
-
-/* 하단 도구모음 */
-.bottom-toolbar{display:flex;gap:8px;margin-top:14px;}
+.bottom-toolbar{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+/* 관리자 전용 버튼 */
+.admin-only-btn{display:none;}
+.is-admin .admin-only-btn{display:inline-flex;}
 
 /* 모달 */
 .modal-overlay{position:fixed;inset:0;background:rgba(31,36,48,.45);
@@ -225,7 +262,7 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 .modal-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:8px;}
 .field{margin-bottom:12px;}
 label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px;}
-input[type=text],input[type=email],textarea,select{
+input[type=text],input[type=password],textarea,select{
   width:100%;padding:8px 11px;border:1px solid var(--line);border-radius:7px;
   font-size:13px;font-family:inherit;background:#fff;color:var(--ink);}
 textarea{resize:vertical;min-height:76px;}
@@ -233,27 +270,24 @@ textarea{resize:vertical;min-height:76px;}
 
 /* 파일 드롭존 */
 .file-drop{
-  border:2px dashed var(--line);border-radius:9px;padding:20px 16px;
+  border:2px dashed var(--line);border-radius:9px;padding:18px 14px;
   text-align:center;font-size:12.5px;color:var(--muted);cursor:pointer;
   background:var(--paper);transition:all .15s;
 }
 .file-drop:hover,.file-drop.drag-over{border-color:var(--seal);background:var(--seal-soft);color:var(--seal);}
 .file-drop.has-file{border-color:var(--pine);background:var(--pine-soft);color:var(--pine);}
-.file-drop .drop-icon{font-size:28px;margin-bottom:6px;}
-.file-drop .drop-hint{font-size:11px;color:var(--muted);margin-top:4px;}
+.drop-icon{font-size:24px;margin-bottom:5px;}
+.drop-hint{font-size:11px;color:var(--muted);margin-top:4px;}
 .file-drop.has-file .drop-hint{color:var(--pine);}
-.file-drop.drag-over .drop-hint{color:var(--seal);}
 
-/* AI 추출 드롭존 */
-.ai-drop-zone{
-  border:2px dashed var(--line);border-radius:9px;padding:30px 20px;
-  text-align:center;cursor:pointer;background:var(--paper);transition:all .15s;
-}
+/* AI 드롭존 */
+.ai-drop-zone{border:2px dashed var(--line);border-radius:9px;padding:28px 18px;
+  text-align:center;cursor:pointer;background:var(--paper);transition:all .15s;}
 .ai-drop-zone:hover,.ai-drop-zone.drag-over{border-color:var(--seal);background:var(--seal-soft);}
 .ai-drop-zone.has-file{border-color:var(--pine);background:var(--pine-soft);}
-.ai-drop-zone .dz-icon{font-size:32px;margin-bottom:8px;}
-.ai-drop-zone .dz-title{font-size:13.5px;font-weight:600;margin-bottom:4px;}
-.ai-drop-zone .dz-sub{font-size:11.5px;color:var(--muted);}
+.dz-icon{font-size:30px;margin-bottom:8px;}
+.dz-title{font-size:13px;font-weight:600;margin-bottom:4px;}
+.dz-sub{font-size:11.5px;color:var(--muted);}
 .ai-drop-zone.has-file .dz-sub{color:var(--pine);}
 
 .ai-result-list{display:flex;flex-direction:column;gap:5px;margin:10px 0;max-height:240px;overflow-y:auto;}
@@ -291,7 +325,7 @@ textarea{resize:vertical;min-height:76px;}
 <body>
 
 <div class="app">
-  <!-- 업무분야 사이드바 -->
+  <!-- 사이드바 -->
   <aside class="sidebar">
     <div class="brand">
       <span class="mark"></span><h1>학교업무별 프로세스</h1>
@@ -299,8 +333,17 @@ textarea{resize:vertical;min-height:76px;}
     </div>
     <div class="cat-list" id="catList"></div>
     <div class="sidebar-foot">
-      <button class="btn-ghost" id="addCategoryBtn">+ 업무분야 추가</button>
-      <div class="whoami" id="whoamiBox">확인 중...</div>
+      <button class="btn-ghost admin-only-btn" id="addCategoryBtn">+ 업무분야 추가</button>
+
+      <!-- 관리자 로그인/로그아웃 패널 -->
+      <div class="admin-panel">
+        <div class="admin-status">
+          <span class="admin-dot" id="adminDot"></span>
+          <span class="admin-name" id="adminName">일반 사용자</span>
+        </div>
+        <button class="btn-admin-login" id="adminLoginBtn">관리자 로그인</button>
+        <button class="btn-admin-logout" id="adminLogoutBtn" style="display:none;">로그아웃</button>
+      </div>
     </div>
   </aside>
 
@@ -316,11 +359,11 @@ textarea{resize:vertical;min-height:76px;}
       <div class="stage-nav-header">진행 단계</div>
       <div id="stageNavList"></div>
       <div class="stage-nav-foot">
-        <button class="stage-manage-btn" id="manageStageBtn">+ 단계 관리</button>
+        <button class="stage-manage-btn admin-only-btn" id="manageStageBtn">+ 단계 관리</button>
       </div>
     </nav>
 
-    <!-- 컨텐츠 -->
+    <!-- 콘텐츠 -->
     <div class="content-area" id="contentArea" style="display:none;">
       <div class="cat-header">
         <div>
@@ -328,8 +371,8 @@ textarea{resize:vertical;min-height:76px;}
           <p id="catDesc"></p>
         </div>
         <div class="cat-actions">
-          <button class="icon-btn" id="editCategoryBtn">수정</button>
-          <button class="icon-btn" id="deleteCategoryBtn">삭제</button>
+          <button class="icon-btn admin-only-btn" id="editCategoryBtn">수정</button>
+          <button class="icon-btn admin-only-btn" id="deleteCategoryBtn">삭제</button>
         </div>
       </div>
 
@@ -341,7 +384,7 @@ textarea{resize:vertical;min-height:76px;}
       </div>
 
       <!-- 4열 그리드 -->
-      <div class="col-grid" id="colGrid">
+      <div class="col-grid">
 
         <!-- ① 해야할일 -->
         <div class="col-card col-task">
@@ -356,7 +399,7 @@ textarea{resize:vertical;min-height:76px;}
         <div class="col-card col-doc">
           <div class="col-head">
             <span><span class="col-icon">📝</span>결재예시 및 서식</span>
-            <button class="add-btn" id="addDocBtn" title="결재예시·서식 추가">＋</button>
+            <button class="add-btn" id="addDocBtn" title="추가">＋</button>
           </div>
           <div class="col-body" id="docList"></div>
         </div>
@@ -365,26 +408,26 @@ textarea{resize:vertical;min-height:76px;}
         <div class="col-card col-law">
           <div class="col-head">
             <span><span class="col-icon">⚖️</span>관련법령·공문</span>
-            <button class="add-btn" id="addLawBtn" title="법령·공문 추가">＋</button>
+            <button class="add-btn" id="addLawBtn" title="추가">＋</button>
           </div>
           <div class="col-body" id="lawList"></div>
         </div>
 
-        <!-- ④ 기타·묻고답하기 -->
-        <div class="col-card col-etc">
+        <!-- ④ 메모 -->
+        <div class="col-card col-memo">
           <div class="col-head">
-            <span><span class="col-icon">💬</span>기타·묻고답하기</span>
-            <button class="add-btn" id="addQuestionBtn" title="질문 추가">＋</button>
+            <span><span class="col-icon">📌</span>메모</span>
+            <button class="add-btn" id="addMemoBtn" title="메모 추가">＋</button>
           </div>
-          <div class="col-body" id="qnaList"></div>
+          <div class="col-body" id="memoList"></div>
         </div>
 
       </div><!-- /col-grid -->
 
-      <!-- 하단 도구 -->
+      <!-- 하단 도구 (관리자만) -->
       <div class="bottom-toolbar">
-        <button class="btn-secondary" id="bulkAddBtn">📋 할일 여러 개 입력</button>
-        <button class="btn-secondary" id="aiExtractBtn">🤖 파일에서 AI로 할일 추출</button>
+        <button class="btn-secondary admin-only-btn" id="bulkAddBtn">📋 할일 여러 개 입력</button>
+        <button class="btn-secondary admin-only-btn" id="aiExtractBtn">🤖 파일에서 AI 추출</button>
       </div>
     </div>
   </div>
@@ -395,7 +438,12 @@ textarea{resize:vertical;min-height:76px;}
 
 <script>
 /* ── 설정 ── */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxpRTapFQzBLREuV20ILDy8IAQ2Sck4oIwBw25xdemvY91UhTXglIW_qRBJG_Bvp6Q/exec';
+const API_URL = 'PUT_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+// 관리자 비밀번호 목록 (Apps Script ADMIN_EMAILS 와 별개로 클라이언트 측 간단 인증)
+// 실제 배포 시 이 목록을 원하는 이메일+비밀번호 쌍으로 수정하세요.
+const ADMIN_ACCOUNTS = [
+  { email: 'angkw007@gmail.com', password: 'gurye2024!' }
+];
 
 let STATE = {
   categories:[], stagesByCategory:{},
@@ -404,40 +452,89 @@ let STATE = {
 };
 
 /* ── JSONP API ── */
-let _seq = 0;
-function api(action, payload={}) {
-  return new Promise((resolve, reject) => {
-    const cb = '_cb_' + (++_seq) + '_' + Date.now();
-    const timer = setTimeout(()=>{cleanup();reject(new Error('요청 시간 초과'));}, 20000);
+let _seq=0;
+function api(action, payload={}){
+  return new Promise((resolve,reject)=>{
+    const cb='_cb_'+(++_seq)+'_'+Date.now();
+    const timer=setTimeout(()=>{cleanup();reject(new Error('요청 시간 초과'));},20000);
     function cleanup(){
-      clearTimeout(timer); delete window[cb];
-      const el=document.getElementById(cb); if(el) el.parentNode.removeChild(el);
+      clearTimeout(timer);delete window[cb];
+      const el=document.getElementById(cb);if(el)el.parentNode.removeChild(el);
     }
-    window[cb] = data => { cleanup(); data.ok ? resolve(data) : reject(new Error(data.error||'오류')); };
-    const s = document.createElement('script');
-    s.id = cb;
-    s.src = API_URL + '?' + new URLSearchParams({action, payload:JSON.stringify(payload), callback:cb});
-    s.onerror = ()=>{ cleanup(); reject(new Error('스크립트 로드 실패')); };
+    window[cb]=data=>{cleanup();data.ok?resolve(data):reject(new Error(data.error||'오류'));};
+    const s=document.createElement('script');
+    s.id=cb;
+    s.src=API_URL+'?'+new URLSearchParams({action,payload:JSON.stringify(payload),callback:cb});
+    s.onerror=()=>{cleanup();reject(new Error('스크립트 로드 실패'));};
     document.head.appendChild(s);
   });
 }
 
 function toast(msg){
   const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
+  t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2400);
 }
 function esc(s){
   return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+/* ── 관리자 인증 (클라이언트 측) ── */
+function applyAdminUI(){
+  const root=document.getElementById('mainArea');
+  const body=document.body;
+  if(STATE.isAdmin){
+    body.classList.add('is-admin');
+    document.getElementById('adminDot').classList.add('on');
+    document.getElementById('adminName').textContent=STATE.userEmail||'관리자';
+    document.getElementById('adminLoginBtn').style.display='none';
+    document.getElementById('adminLogoutBtn').style.display='block';
+  } else {
+    body.classList.remove('is-admin');
+    document.getElementById('adminDot').classList.remove('on');
+    document.getElementById('adminName').textContent='일반 사용자';
+    document.getElementById('adminLoginBtn').style.display='block';
+    document.getElementById('adminLogoutBtn').style.display='none';
+  }
+}
+
+document.getElementById('adminLoginBtn').addEventListener('click',()=>{
+  openModal(`
+    <h3>관리자 로그인</h3>
+    <div class="sub">관리자 계정으로 로그인하면 업무분야·단계·할일 추가·수정·삭제 기능이 활성화됩니다.</div>
+    <div class="field"><label>이메일</label><input type="text" id="m-email" placeholder="관리자 이메일"></div>
+    <div class="field"><label>비밀번호</label><input type="password" id="m-pw" placeholder="비밀번호"></div>
+    <div id="m-login-err" style="font-size:12px;color:var(--seal);display:none;margin-bottom:8px;">이메일 또는 비밀번호가 올바르지 않습니다.</div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">취소</button>
+      <button class="btn-primary seal" id="m-submit">로그인</button>
+    </div>`);
+  const doLogin=()=>{
+    const email=document.getElementById('m-email').value.trim();
+    const pw=document.getElementById('m-pw').value;
+    const match=ADMIN_ACCOUNTS.find(a=>a.email===email&&a.password===pw);
+    if(!match){
+      document.getElementById('m-login-err').style.display='block';
+      return;
+    }
+    STATE.isAdmin=true; STATE.userEmail=email;
+    applyAdminUI();
+    closeModal();
+    toast('관리자로 로그인되었습니다.');
+  };
+  document.getElementById('m-submit').addEventListener('click',doLogin);
+  document.getElementById('m-pw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+});
+
+document.getElementById('adminLogoutBtn').addEventListener('click',()=>{
+  STATE.isAdmin=false; STATE.userEmail='';
+  applyAdminUI();
+  toast('로그아웃되었습니다.');
+});
+
 /* ── 초기화 ── */
 async function init(){
-  try{
-    const who=await api('whoAmI');
-    STATE.isAdmin=who.isAdmin; STATE.userEmail=who.email;
-    document.getElementById('whoamiBox').textContent=who.email?(who.email+(who.isAdmin?' ·관리자':'')):'게스트';
-  }catch(e){ document.getElementById('whoamiBox').textContent='로그인 확인 불가'; }
+  applyAdminUI();
   try{
     const data=await api('getAll');
     STATE.categories=data.categories;
@@ -446,7 +543,7 @@ async function init(){
     document.getElementById('schoolNameLabel').textContent=STATE.schoolName;
     renderCategoryList();
     if(STATE.categories.length>0) selectCategory(STATE.categories[0].id);
-  }catch(e){ toast('초기 로딩 실패: '+e.message); }
+  }catch(e){toast('초기 로딩 실패: '+e.message);}
 }
 
 /* ── 사이드바 ── */
@@ -461,9 +558,9 @@ function renderCategoryList(){
 }
 
 function selectCategory(id){
-  STATE.currentCategoryId=id; STATE.currentStageId=null;
+  STATE.currentCategoryId=id;STATE.currentStageId=null;
   renderCategoryList();
-  const cat=STATE.categories.find(c=>c.id===id); if(!cat) return;
+  const cat=STATE.categories.find(c=>c.id===id);if(!cat)return;
   document.getElementById('emptyMain').style.display='none';
   document.getElementById('stageNav').style.display='';
   document.getElementById('contentArea').style.display='';
@@ -477,8 +574,8 @@ function renderStageNav(){
   const stages=STATE.stagesByCategory[STATE.currentCategoryId]||[];
   const list=document.getElementById('stageNavList');
   if(!stages.length){
-    list.innerHTML='<div style="padding:10px 13px;font-size:11px;color:var(--muted);">단계가 없습니다.<br>아래 + 단계 관리를 눌러 추가하세요.</div>';
-    clearGrid(); updateBanner(null,[]); return;
+    list.innerHTML='<div style="padding:10px 13px;font-size:11px;color:var(--muted);">단계가 없습니다.<br>단계 관리에서 추가하세요.</div>';
+    clearGrid();updateBanner(null,[]);return;
   }
   if(!STATE.currentStageId||!stages.find(s=>s.id===STATE.currentStageId))
     STATE.currentStageId=stages[0].id;
@@ -487,15 +584,14 @@ function renderStageNav(){
       <span class="stage-num">${i+1}</span>${esc(s.name)}
     </div>`).join('');
   list.querySelectorAll('.stage-nav-item').forEach(e=>e.addEventListener('click',()=>{
-    STATE.currentStageId=e.dataset.id; renderStageNav();
+    STATE.currentStageId=e.dataset.id;renderStageNav();
   }));
   updateBanner(STATE.currentStageId,stages);
   loadAllColumns();
 }
 
 function updateBanner(id,stages){
-  const idx=stages.findIndex(s=>s.id===id);
-  const s=stages[idx];
+  const idx=stages.findIndex(s=>s.id===id);const s=stages[idx];
   document.getElementById('stageBannerNum').textContent=idx>=0?idx+1:'-';
   document.getElementById('stageBannerName').textContent=s?s.name:'단계를 선택하세요';
   document.getElementById('stageBannerHint').textContent=s?`총 ${stages.length}단계 중 ${idx+1}번째`:'← 단계를 추가하세요';
@@ -503,19 +599,19 @@ function updateBanner(id,stages){
 
 /* ── 4열 동시 로딩 ── */
 async function loadAllColumns(){
-  if(!STATE.currentStageId) return;
-  ['taskList','docList','lawList','qnaList'].forEach(id=>{
+  if(!STATE.currentStageId)return;
+  ['taskList','docList','lawList','memoList'].forEach(id=>{
     document.getElementById(id).innerHTML='<div class="loading-text"><span class="spinner"></span>불러오는 중</div>';
   });
-  await Promise.all([loadTasks(), loadDocs(), loadLaws(), loadQna()]);
+  await Promise.all([loadTasks(),loadDocs(),loadLaws(),loadMemos()]);
 }
 function clearGrid(){
-  ['taskList','docList','lawList','qnaList'].forEach(id=>{
+  ['taskList','docList','lawList','memoList'].forEach(id=>{
     document.getElementById(id).innerHTML='<div class="empty-col">-</div>';
   });
 }
 
-/* ── ① 해야할일 ── */
+/* ── ① 해야할일 (수정·삭제 관리자만, 완료체크 누구나) ── */
 async function loadTasks(){
   const el=document.getElementById('taskList');
   try{
@@ -523,28 +619,57 @@ async function loadTasks(){
     if(!tasks.length){el.innerHTML='<div class="empty-col">할일이 없습니다</div>';return;}
     el.innerHTML=tasks.map(t=>`
       <div class="task-item ${t.done?'done':''}" data-id="${t.id}">
-        <div class="task-check ${t.done?'checked':''}" data-action="toggle">${t.done?'✓':''}</div>
+        <div class="task-check ${t.done?'checked':''}">${t.done?'✓':''}</div>
         <div class="task-body">
           <div class="task-content">${esc(t.content)}</div>
           ${t.note?`<div class="task-note">📌 ${esc(t.note)}</div>`:''}
           ${t.owner?`<div class="task-note">👤 ${esc(t.owner)}</div>`:''}
         </div>
-        <button class="item-del" data-action="delete">✕</button>
+        <div class="task-actions">
+          <button class="task-act-btn" data-action="edit" title="수정">✏️</button>
+          <button class="task-act-btn del" data-action="delete" title="삭제">✕</button>
+        </div>
       </div>`).join('');
+
+    // 완료 체크 — 누구나
     el.querySelectorAll('.task-check').forEach(c=>c.addEventListener('click',async()=>{
-      await api('toggleTaskDone',{id:c.closest('.task-item').dataset.id}); loadTasks();
+      await api('toggleTaskDone',{id:c.closest('.task-item').dataset.id});loadTasks();
     }));
-    el.querySelectorAll('.item-del').forEach(b=>b.addEventListener('click',async()=>{
-      if(!confirm('삭제할까요?')) return;
-      await api('deleteTask',{id:b.closest('.task-item').dataset.id}); loadTasks();
+    // 수정 — 관리자만
+    el.querySelectorAll('[data-action="edit"]').forEach(b=>b.addEventListener('click',()=>{
+      if(!STATE.isAdmin)return toast('관리자만 수정할 수 있습니다.');
+      const item=b.closest('.task-item');
+      const content=item.querySelector('.task-content').textContent;
+      const note=item.querySelector('.task-note')?.textContent.replace('📌 ','').replace('👤 ','');
+      openModal(`
+        <h3>할일 수정</h3>
+        <div class="field"><label>할일 내용</label><textarea id="m-content">${esc(content)}</textarea></div>
+        <div class="field"><label>비고</label><input type="text" id="m-note" value="${esc(note||'')}"></div>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="closeModal()">취소</button>
+          <button class="btn-primary seal" id="m-submit">저장</button>
+        </div>`);
+      document.getElementById('m-submit').addEventListener('click',async()=>{
+        await api('updateTask',{id:item.dataset.id,
+          content:document.getElementById('m-content').value.trim(),
+          note:document.getElementById('m-note').value.trim()});
+        closeModal();toast('수정되었습니다.');loadTasks();
+      });
+    }));
+    // 삭제 — 관리자만
+    el.querySelectorAll('[data-action="delete"]').forEach(b=>b.addEventListener('click',async()=>{
+      if(!STATE.isAdmin)return toast('관리자만 삭제할 수 있습니다.');
+      if(!confirm('삭제할까요?'))return;
+      await api('deleteTask',{id:b.closest('.task-item').dataset.id});loadTasks();
     }));
   }catch(e){el.innerHTML=`<div class="empty-col">오류: ${esc(e.message)}</div>`;}
 }
 
 document.getElementById('addTaskBtn').addEventListener('click',()=>{
-  if(!STATE.currentStageId) return toast('단계를 먼저 선택하세요.');
+  if(!STATE.isAdmin)return toast('관리자만 추가할 수 있습니다.');
+  if(!STATE.currentStageId)return toast('단계를 먼저 선택하세요.');
   openModal(`
-    <h3>할일 추가</h3><div class="sub">현재 단계에 새 할일을 추가합니다.</div>
+    <h3>할일 추가</h3>
     <div class="field"><label>할일 내용</label><textarea id="m-content" placeholder="예: 보호자에게 48시간 이내 사안 통보"></textarea></div>
     <div class="field"><label>비고</label><input type="text" id="m-note" placeholder="기한, 참고사항"></div>
     <div class="field"><label>담당자</label><input type="text" id="m-owner"></div>
@@ -554,15 +679,15 @@ document.getElementById('addTaskBtn').addEventListener('click',()=>{
     </div>`);
   document.getElementById('m-submit').addEventListener('click',async()=>{
     const content=document.getElementById('m-content').value.trim();
-    if(!content) return toast('내용을 입력하세요.');
+    if(!content)return toast('내용을 입력하세요.');
     await api('addTask',{stageId:STATE.currentStageId,content,
       note:document.getElementById('m-note').value.trim(),
       owner:document.getElementById('m-owner').value.trim()});
-    closeModal(); toast('추가되었습니다.'); loadTasks();
+    closeModal();toast('추가되었습니다.');loadTasks();
   });
 });
 
-/* ── ② 결재예시 및 서식 (합쳐진 열) ── */
+/* ── ② 결재예시 및 서식 (다운로드 누구나, 추가·삭제 관리자) ── */
 async function loadDocs(){
   const el=document.getElementById('docList');
   try{
@@ -578,25 +703,29 @@ async function loadDocs(){
           <button class="item-del">✕</button>
         </div>
         ${d.desc?`<div class="doc-sub">${esc(d.desc)}</div>`:''}
-        ${d.fileUrl?`<a class="doc-link" href="${d.fileUrl}" target="_blank">📎 ${esc(d.fileName||'열기')}</a>`:''}
+        ${d.fileUrl?`
+          <div class="doc-foot">
+            <a class="dl-btn" href="${d.downloadUrl||d.fileUrl}" target="_blank" download>
+              ⬇ ${esc(d.fileName||'다운로드')}
+            </a>
+          </div>`:''}
       </div>`).join('');
     el.querySelectorAll('.item-del').forEach(b=>b.addEventListener('click',async()=>{
-      if(!confirm('삭제할까요?')) return;
-      await api('deleteDoc',{id:b.closest('.doc-item').dataset.id}); loadDocs();
+      if(!STATE.isAdmin)return toast('관리자만 삭제할 수 있습니다.');
+      if(!confirm('삭제할까요?'))return;
+      await api('deleteDoc',{id:b.closest('.doc-item').dataset.id});loadDocs();
     }));
   }catch(e){el.innerHTML=`<div class="empty-col">오류: ${esc(e.message)}</div>`;}
 }
 
 document.getElementById('addDocBtn').addEventListener('click',()=>{
-  if(!STATE.currentCategoryId) return toast('업무분야를 선택하세요.');
+  if(!STATE.isAdmin)return toast('관리자만 추가할 수 있습니다.');
+  if(!STATE.currentCategoryId)return toast('업무분야를 선택하세요.');
   openModal(`
     <h3>결재예시 및 서식 추가</h3>
     <div class="field">
       <label>구분</label>
-      <select id="m-type">
-        <option value="결재예시">결재예시</option>
-        <option value="서식">서식</option>
-      </select>
+      <select id="m-type"><option value="결재예시">결재예시</option><option value="서식">서식</option></select>
     </div>
     <div class="field"><label>제목</label><input type="text" id="m-title" placeholder="예: 학교폭력 사안보고 결재문"></div>
     <div class="field"><label>설명 (선택)</label><textarea id="m-desc" style="min-height:55px;"></textarea></div>
@@ -604,7 +733,7 @@ document.getElementById('addDocBtn').addEventListener('click',()=>{
       <label>첨부파일 (hwp, hwpx, pdf, docx 등)</label>
       <div class="file-drop" id="m-filedrop">
         <div class="drop-icon">📎</div>
-        <div>클릭하거나 파일을 여기에 드래그하세요</div>
+        <div>클릭하거나 드래그하세요</div>
         <div class="drop-hint">hwp, hwpx, pdf, docx, xlsx 등 모든 형식 가능</div>
       </div>
       <input type="file" id="m-fileinput" style="display:none;">
@@ -616,13 +745,14 @@ document.getElementById('addDocBtn').addEventListener('click',()=>{
   setupFileDrop();
   document.getElementById('m-submit').addEventListener('click',async()=>{
     const title=document.getElementById('m-title').value.trim();
-    if(!title) return toast('제목을 입력하세요.');
+    if(!title)return toast('제목을 입력하세요.');
     const fi=await uploadIfFileSelected();
     await api('addDoc',{categoryId:STATE.currentCategoryId,title,
       type:document.getElementById('m-type').value,
       desc:document.getElementById('m-desc').value.trim(),
-      fileUrl:fi?fi.fileUrl:'',fileName:fi?fi.fileName:''});
-    closeModal(); toast('추가되었습니다.'); loadDocs();
+      fileUrl:fi?fi.fileUrl:'',fileName:fi?fi.fileName:'',
+      downloadUrl:fi?fi.downloadUrl:''});
+    closeModal();toast('추가되었습니다.');loadDocs();
   });
 });
 
@@ -639,17 +769,24 @@ async function loadLaws(){
           <button class="item-del">✕</button>
         </div>
         ${l.lawName?`<div class="doc-sub">${esc(l.lawName)}</div>`:''}
-        ${l.fileUrl?`<a class="doc-link" href="${l.fileUrl}" target="_blank">📎 ${esc(l.fileName||'열기')}</a>`:''}
+        ${l.fileUrl?`
+          <div class="doc-foot">
+            <a class="dl-btn" href="${l.downloadUrl||l.fileUrl}" target="_blank" download>
+              ⬇ ${esc(l.fileName||'다운로드')}
+            </a>
+          </div>`:''}
       </div>`).join('');
     el.querySelectorAll('.item-del').forEach(b=>b.addEventListener('click',async()=>{
-      if(!confirm('삭제할까요?')) return;
-      await api('deleteLaw',{id:b.closest('.doc-item').dataset.id}); loadLaws();
+      if(!STATE.isAdmin)return toast('관리자만 삭제할 수 있습니다.');
+      if(!confirm('삭제할까요?'))return;
+      await api('deleteLaw',{id:b.closest('.doc-item').dataset.id});loadLaws();
     }));
   }catch(e){el.innerHTML=`<div class="empty-col">오류: ${esc(e.message)}</div>`;}
 }
 
 document.getElementById('addLawBtn').addEventListener('click',()=>{
-  if(!STATE.currentCategoryId) return toast('업무분야를 선택하세요.');
+  if(!STATE.isAdmin)return toast('관리자만 추가할 수 있습니다.');
+  if(!STATE.currentCategoryId)return toast('업무분야를 선택하세요.');
   openModal(`
     <h3>법령·공문 추가</h3>
     <div class="field"><label>제목</label><input type="text" id="m-title" placeholder="예: 학교폭력예방법 시행령 개정 안내"></div>
@@ -670,67 +807,85 @@ document.getElementById('addLawBtn').addEventListener('click',()=>{
   setupFileDrop();
   document.getElementById('m-submit').addEventListener('click',async()=>{
     const title=document.getElementById('m-title').value.trim();
-    if(!title) return toast('제목을 입력하세요.');
+    if(!title)return toast('제목을 입력하세요.');
     const fi=await uploadIfFileSelected();
     await api('addLaw',{categoryId:STATE.currentCategoryId,title,
       lawName:document.getElementById('m-lawname').value.trim(),
-      fileUrl:fi?fi.fileUrl:'',fileName:fi?fi.fileName:''});
-    closeModal(); toast('추가되었습니다.'); loadLaws();
+      fileUrl:fi?fi.fileUrl:'',fileName:fi?fi.fileName:'',
+      downloadUrl:fi?fi.downloadUrl:''});
+    closeModal();toast('추가되었습니다.');loadLaws();
   });
 });
 
-/* ── ④ 기타·묻고답하기 ── */
-async function loadQna(){
-  const el=document.getElementById('qnaList');
+/* ── ④ 메모 (QnA 대체, 누구나 작성/관리자만 수정·삭제) ── */
+async function loadMemos(){
+  const el=document.getElementById('memoList');
   try{
     const {qna}=await api('getQna',{categoryId:STATE.currentCategoryId});
-    if(!qna.length){el.innerHTML='<div class="empty-col">질문이 없습니다</div>';return;}
-    el.innerHTML=qna.map(q=>`
-      <div class="qna-item" data-id="${q.id}">
-        <div class="qna-q">
-          <span class="qna-badge ${q.status==='답변완료'?'done':''}">${q.status==='답변완료'?'완료':'대기'}</span>${esc(q.question)}
+    if(!qna.length){el.innerHTML='<div class="empty-col">메모가 없습니다</div>';return;}
+    el.innerHTML=qna.map(m=>`
+      <div class="memo-item" data-id="${m.id}">
+        <div class="memo-head">
+          <span style="font-size:11px;font-weight:700;color:var(--violet);">📌 메모</span>
+          <div class="memo-actions">
+            <button class="memo-act-btn" data-action="edit">✏️</button>
+            <button class="memo-act-btn del" data-action="delete">✕</button>
+          </div>
         </div>
-        <div class="qna-meta">${esc(q.asker)} · ${esc(q.askedAt)}</div>
-        ${q.answer
-          ?`<div class="qna-a"><div class="alabel">답변 · ${esc(q.answerer)}</div>${esc(q.answer)}</div>`
-          :`<div class="qna-ans-row">
-              <input type="text" placeholder="답변 입력" class="qna-ans-input">
-              <button class="btn-secondary qna-ans-btn" style="padding:5px 9px;font-size:11px;">등록</button>
-            </div>`}
+        <div class="memo-content">${esc(m.question)}</div>
+        <div class="memo-meta">${esc(m.asker)} · ${esc(m.askedAt)}</div>
       </div>`).join('');
-    el.querySelectorAll('.qna-ans-btn').forEach(btn=>{
-      btn.addEventListener('click',async()=>{
-        const ans=btn.closest('.qna-item').querySelector('.qna-ans-input').value.trim();
-        if(!ans) return toast('답변을 입력하세요.');
-        await api('addAnswer',{id:btn.closest('.qna-item').dataset.id,answer:ans});
-        toast('답변 등록'); loadQna();
+
+    el.querySelectorAll('[data-action="edit"]').forEach(b=>b.addEventListener('click',()=>{
+      const item=b.closest('.memo-item');
+      const content=item.querySelector('.memo-content').textContent;
+      openModal(`
+        <h3>메모 수정</h3>
+        <div class="field"><textarea id="m-memo" style="min-height:100px;">${esc(content)}</textarea></div>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="closeModal()">취소</button>
+          <button class="btn-primary seal" id="m-submit">저장</button>
+        </div>`);
+      document.getElementById('m-submit').addEventListener('click',async()=>{
+        const text=document.getElementById('m-memo').value.trim();
+        if(!text)return toast('내용을 입력하세요.');
+        // QnA의 question 필드를 메모 내용으로 사용
+        await api('addAnswer',{id:item.dataset.id,answer:text});
+        closeModal();toast('수정되었습니다.');loadMemos();
       });
-    });
+    }));
+    el.querySelectorAll('[data-action="delete"]').forEach(b=>b.addEventListener('click',async()=>{
+      if(!confirm('삭제할까요?'))return;
+      await api('deleteQna',{id:b.closest('.memo-item').dataset.id});loadMemos();
+    }));
   }catch(e){el.innerHTML=`<div class="empty-col">오류: ${esc(e.message)}</div>`;}
 }
 
-document.getElementById('addQuestionBtn').addEventListener('click',()=>{
-  if(!STATE.currentCategoryId) return toast('업무분야를 선택하세요.');
+document.getElementById('addMemoBtn').addEventListener('click',()=>{
+  if(!STATE.currentCategoryId)return toast('업무분야를 선택하세요.');
   openModal(`
-    <h3>질문하기</h3>
-    <div class="field"><label>질문 내용</label><textarea id="m-question" placeholder="궁금한 점을 남겨주세요."></textarea></div>
+    <h3>메모 추가</h3>
+    <div class="sub">이 업무분야에 메모를 남깁니다. 누구나 작성할 수 있습니다.</div>
+    <div class="field"><textarea id="m-memo" style="min-height:100px;" placeholder="메모 내용을 입력하세요."></textarea></div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal()">취소</button>
-      <button class="btn-primary" id="m-submit">등록</button>
+      <button class="btn-primary seal" id="m-submit">저장</button>
     </div>`);
   document.getElementById('m-submit').addEventListener('click',async()=>{
-    const q=document.getElementById('m-question').value.trim();
-    if(!q) return toast('질문을 입력하세요.');
-    await api('addQuestion',{categoryId:STATE.currentCategoryId,question:q});
-    closeModal(); toast('질문이 등록되었습니다.'); loadQna();
+    const text=document.getElementById('m-memo').value.trim();
+    if(!text)return toast('내용을 입력하세요.');
+    await api('addQuestion',{categoryId:STATE.currentCategoryId,question:text,
+      asker:STATE.userEmail||'익명'});
+    closeModal();toast('메모가 저장되었습니다.');loadMemos();
   });
 });
 
 /* ── 단계 관리 ── */
 document.getElementById('manageStageBtn').addEventListener('click',async()=>{
+  if(!STATE.isAdmin)return toast('관리자만 사용할 수 있습니다.');
   const stages=STATE.stagesByCategory[STATE.currentCategoryId]||[];
   openModal(`
-    <h3>단계 관리</h3><div class="sub">단계를 추가·삭제·순서 변경할 수 있습니다.</div>
+    <h3>단계 관리</h3><div class="sub">단계를 추가·삭제·순서 변경합니다.</div>
     <div id="stage-edit-list">
       ${stages.map(s=>`
         <div class="stage-edit-row" data-id="${s.id}">
@@ -751,19 +906,18 @@ document.getElementById('manageStageBtn').addEventListener('click',async()=>{
       <button class="btn-secondary" onclick="closeModal()">닫기</button>
       <button class="btn-primary seal" id="m-save-stages">이름 변경 저장</button>
     </div>`);
-
   document.getElementById('m-add-stage').addEventListener('click',async()=>{
     const name=document.getElementById('m-new-stage').value.trim();
-    if(!name) return toast('단계명을 입력하세요.');
+    if(!name)return toast('단계명을 입력하세요.');
     await api('addStage',{categoryId:STATE.currentCategoryId,name});
-    toast('추가되었습니다.'); await refreshStages();
+    toast('추가되었습니다.');await refreshStages();
     document.getElementById('manageStageBtn').click();
   });
   document.getElementById('stage-edit-list').querySelectorAll('.stage-edit-row').forEach(row=>{
     row.querySelector('[data-action="delete"]').addEventListener('click',async()=>{
-      if(!confirm('삭제할까요?')) return;
-      await api('deleteStage',{id:row.dataset.id}); toast('삭제되었습니다.');
-      await refreshStages(); document.getElementById('manageStageBtn').click();
+      if(!confirm('삭제할까요?'))return;
+      await api('deleteStage',{id:row.dataset.id});toast('삭제되었습니다.');
+      await refreshStages();document.getElementById('manageStageBtn').click();
     });
     row.querySelector('[data-action="up"]').addEventListener('click',()=>moveStage(row.dataset.id,-1));
     row.querySelector('[data-action="down"]').addEventListener('click',()=>moveStage(row.dataset.id,1));
@@ -771,28 +925,29 @@ document.getElementById('manageStageBtn').addEventListener('click',async()=>{
   document.getElementById('m-save-stages').addEventListener('click',async()=>{
     for(const row of document.getElementById('stage-edit-list').querySelectorAll('.stage-edit-row')){
       const name=row.querySelector('[data-field="name"]').value.trim();
-      if(name) await api('updateStage',{id:row.dataset.id,name});
+      if(name)await api('updateStage',{id:row.dataset.id,name});
     }
-    closeModal(); toast('저장되었습니다.'); await refreshStages();
+    closeModal();toast('저장되었습니다.');await refreshStages();
   });
 });
 
 async function moveStage(id,dir){
   const stages=[...(STATE.stagesByCategory[STATE.currentCategoryId]||[])];
-  const idx=stages.findIndex(s=>s.id===id); const swap=idx+dir;
-  if(swap<0||swap>=stages.length) return;
+  const idx=stages.findIndex(s=>s.id===id);const swap=idx+dir;
+  if(swap<0||swap>=stages.length)return;
   [stages[idx],stages[swap]]=[stages[swap],stages[idx]];
   await api('reorderStages',{orderedIds:stages.map(s=>s.id)});
-  await refreshStages(); document.getElementById('manageStageBtn').click();
+  await refreshStages();document.getElementById('manageStageBtn').click();
 }
 async function refreshStages(){
   const {stages}=await api('getStages',{categoryId:STATE.currentCategoryId});
-  STATE.stagesByCategory[STATE.currentCategoryId]=stages; renderStageNav();
+  STATE.stagesByCategory[STATE.currentCategoryId]=stages;renderStageNav();
 }
 
 /* ── 할일 일괄 입력 ── */
 document.getElementById('bulkAddBtn').addEventListener('click',()=>{
-  if(!STATE.currentStageId) return toast('단계를 먼저 선택하세요.');
+  if(!STATE.isAdmin)return toast('관리자만 사용할 수 있습니다.');
+  if(!STATE.currentStageId)return toast('단계를 먼저 선택하세요.');
   openModal(`
     <h3>할일 여러 개 한꺼번에 입력</h3>
     <div class="sub">한 줄에 하나씩. <b>|</b> 로 구분하면 [내용 | 비고 | 담당자]로 저장됩니다.</div>
@@ -808,23 +963,24 @@ document.getElementById('bulkAddBtn').addEventListener('click',()=>{
     </div>`);
   document.getElementById('m-submit').addEventListener('click',async()=>{
     const text=document.getElementById('m-bulk').value;
-    if(!text.trim()) return toast('내용을 입력하세요.');
+    if(!text.trim())return toast('내용을 입력하세요.');
     const res=await api('bulkAddTasks',{stageId:STATE.currentStageId,text});
-    closeModal(); toast(`${res.count}개 추가됨`); loadTasks();
+    closeModal();toast(`${res.count}개 추가됨`);loadTasks();
   });
 });
 
-/* ── AI 추출 — 파일 드래그&드롭 방식 ── */
+/* ── AI 추출 ── */
 document.getElementById('aiExtractBtn').addEventListener('click',()=>{
-  if(!STATE.currentStageId) return toast('단계를 먼저 선택하세요.');
+  if(!STATE.isAdmin)return toast('관리자만 사용할 수 있습니다.');
+  if(!STATE.currentStageId)return toast('단계를 먼저 선택하세요.');
   let aiFile=null;
   openModal(`
     <h3>파일에서 AI로 할일 추출</h3>
-    <div class="sub">업무 매뉴얼, 공문, 지침 파일을 올리면 AI가 단계별 할일을 자동으로 추출합니다.</div>
+    <div class="sub">업무 매뉴얼·공문 파일을 올리면 AI가 할일 목록을 자동 추출합니다.</div>
     <div class="ai-drop-zone" id="ai-dz">
       <div class="dz-icon">📂</div>
       <div class="dz-title">파일을 드래그하거나 클릭해서 선택</div>
-      <div class="dz-sub">txt, pdf, docx, hwp, hwpx 등 텍스트가 포함된 파일<br>※ hwp/hwpx는 텍스트 추출 가능 시 분석됩니다</div>
+      <div class="dz-sub">txt, pdf, docx, hwp, hwpx 등</div>
     </div>
     <input type="file" id="ai-file-input" style="display:none;" accept=".txt,.pdf,.docx,.doc,.hwp,.hwpx,.md">
     <div id="m-extract-result"></div>
@@ -832,44 +988,34 @@ document.getElementById('aiExtractBtn').addEventListener('click',()=>{
       <button class="btn-secondary" onclick="closeModal()">취소</button>
       <button class="btn-primary seal" id="m-extract" disabled style="opacity:.4">AI로 추출</button>
     </div>`);
-
   const dz=document.getElementById('ai-dz');
   const fi=document.getElementById('ai-file-input');
-
   dz.addEventListener('click',()=>fi.click());
   dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
   dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
-  dz.addEventListener('drop',e=>{
-    e.preventDefault(); dz.classList.remove('drag-over');
-    if(e.dataTransfer.files.length) setAiFile(e.dataTransfer.files[0]);
-  });
-  fi.addEventListener('change',()=>{ if(fi.files.length) setAiFile(fi.files[0]); });
-
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');
+    if(e.dataTransfer.files.length)setAiFile(e.dataTransfer.files[0]);});
+  fi.addEventListener('change',()=>{if(fi.files.length)setAiFile(fi.files[0]);});
   function setAiFile(file){
-    aiFile=file;
-    dz.classList.add('has-file');
+    aiFile=file;dz.classList.add('has-file');
     dz.querySelector('.dz-icon').textContent='✅';
     dz.querySelector('.dz-title').textContent=file.name;
-    dz.querySelector('.dz-sub').textContent=`${(file.size/1024).toFixed(1)} KB · 클릭하면 다시 선택`;
-    const btn=document.getElementById('m-extract');
-    btn.disabled=false; btn.style.opacity='1';
+    dz.querySelector('.dz-sub').textContent=`${(file.size/1024).toFixed(1)} KB`;
+    const btn=document.getElementById('m-extract');btn.disabled=false;btn.style.opacity='1';
   }
-
   document.getElementById('m-extract').addEventListener('click',async()=>{
-    if(!aiFile) return toast('파일을 먼저 선택하세요.');
+    if(!aiFile)return toast('파일을 먼저 선택하세요.');
     const box=document.getElementById('m-extract-result');
-    box.innerHTML='<div class="loading-text" style="margin-top:14px;"><span class="spinner"></span>파일을 읽고 AI가 분석 중입니다...</div>';
+    box.innerHTML='<div class="loading-text" style="margin-top:12px;"><span class="spinner"></span>분석 중...</div>';
     document.getElementById('m-extract').disabled=true;
     try{
       const sourceText=await readFileAsText(aiFile);
-      if(!sourceText.trim()) throw new Error('파일에서 텍스트를 추출할 수 없습니다. txt 또는 pdf(텍스트 PDF) 파일을 사용해주세요.');
+      if(!sourceText.trim())throw new Error('텍스트를 추출할 수 없습니다. txt 파일로 변환 후 다시 시도하세요.');
       const {extracted}=await api('extractTasksFromSource',{
         sourceText:sourceText.slice(0,12000),
-        categoryId:STATE.currentCategoryId,
-        stageId:STATE.currentStageId
-      });
+        categoryId:STATE.currentCategoryId,stageId:STATE.currentStageId});
       box.innerHTML=`
-        <div style="margin-top:14px;font-size:12.5px;font-weight:600;">추출된 할일 ${extracted.length}개 (체크된 항목만 저장됩니다)</div>
+        <div style="margin-top:14px;font-size:12.5px;font-weight:600;">추출 ${extracted.length}개</div>
         <div class="ai-result-list">
           ${extracted.map((t,i)=>`
             <label class="ai-result-item">
@@ -879,118 +1025,81 @@ document.getElementById('aiExtractBtn').addEventListener('click',()=>{
         </div>
         <div class="modal-actions">
           <button class="btn-secondary" onclick="closeModal()">닫기</button>
-          <button class="btn-primary seal" id="m-confirm">선택 항목 저장</button>
+          <button class="btn-primary seal" id="m-confirm">선택 저장</button>
         </div>`;
       document.getElementById('ai-actions').style.display='none';
       document.getElementById('m-confirm').addEventListener('click',async()=>{
         const checked=[...box.querySelectorAll('input[type=checkbox]:checked')].map(c=>extracted[c.dataset.idx]);
-        if(!checked.length) return toast('저장할 항목을 선택하세요.');
+        if(!checked.length)return toast('저장할 항목을 선택하세요.');
         await api('confirmExtractedTasks',{stageId:STATE.currentStageId,tasks:checked});
-        closeModal(); toast(`${checked.length}개 저장됨`); loadTasks();
+        closeModal();toast(`${checked.length}개 저장됨`);loadTasks();
       });
     }catch(e){
-      box.innerHTML=`<div style="margin-top:14px;padding:12px;background:var(--seal-soft);border-radius:8px;font-size:12.5px;color:var(--seal);">⚠️ ${esc(e.message)}</div>`;
+      box.innerHTML=`<div style="margin-top:12px;padding:10px;background:var(--seal-soft);border-radius:8px;font-size:12px;color:var(--seal);">⚠️ ${esc(e.message)}</div>`;
       document.getElementById('m-extract').disabled=false;
     }
   });
 });
 
-/**
- * 파일을 텍스트로 읽기
- * - txt/md: 그대로 읽기
- * - pdf: PDF.js 없이 바이너리에서 스트림 텍스트 추출 시도
- * - docx: xml 파싱으로 w:t 태그 추출
- * - hwp/hwpx: 가능한 경우 텍스트 부분 추출
- */
 function readFileAsText(file){
   return new Promise((resolve,reject)=>{
-    const name=file.name.toLowerCase();
-    const reader=new FileReader();
-
+    const name=file.name.toLowerCase();const reader=new FileReader();
     if(name.endsWith('.txt')||name.endsWith('.md')||name.endsWith('.csv')){
       reader.onload=e=>resolve(e.target.result);
       reader.onerror=()=>reject(new Error('파일 읽기 실패'));
-      reader.readAsText(file,'utf-8');
-      return;
+      reader.readAsText(file,'utf-8');return;
     }
-
-    // 바이너리로 읽어서 텍스트 추출 시도 (pdf, docx, hwpx 등)
     reader.onload=e=>{
-      const ab=e.target.result;
-      const bytes=new Uint8Array(ab);
-
-      // ── docx / hwpx (zip 기반 xml) 텍스트 추출 ──
+      const bytes=new Uint8Array(e.target.result);
       if(name.endsWith('.docx')||name.endsWith('.hwpx')){
-        try{
-          const text=extractZipXmlText(bytes,name.endsWith('.docx')?'word/document.xml':'Contents/section0.xml');
-          if(text.trim()) return resolve(text);
-        }catch(err){}
+        try{const t=extractZipXmlText(bytes);if(t.trim())return resolve(t);}catch(err){}
       }
-
-      // ── PDF 기본 텍스트 스트림 추출 ──
       if(name.endsWith('.pdf')){
         try{
           const raw=new TextDecoder('latin1').decode(bytes);
-          const chunks=[];
-          const re=/BT[\s\S]*?ET/g; let m;
+          const chunks=[];const re=/BT[\s\S]*?ET/g;let m;
           while((m=re.exec(raw))!==null){
-            const tj=/\(([^)]*)\)\s*T[jJ]/g; let tj_m;
-            while((tj_m=tj.exec(m[0]))!==null) chunks.push(tj_m[1]);
+            const tj=/\(([^)]*)\)\s*T[jJ]/g;let tj_m;
+            while((tj_m=tj.exec(m[0]))!==null)chunks.push(tj_m[1]);
           }
-          if(chunks.length>0) return resolve(chunks.join(' '));
+          if(chunks.length>0)return resolve(chunks.join(' '));
         }catch(err){}
       }
-
-      // ── hwp (바이너리) - 가독 텍스트 부분만 추출 ──
-      if(name.endsWith('.hwp')){
-        try{
-          const raw=new TextDecoder('utf-16le').decode(bytes.slice(0,Math.min(bytes.length,200000)));
-          const visible=raw.replace(/[^\uAC00-\uD7A3\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uD7B0-\uD7FF\w\s.,!?:;\-()]/g,' ').replace(/\s+/g,' ').trim();
-          if(visible.length>100) return resolve(visible);
-        }catch(err){}
-      }
-
-      // 최후 수단: UTF-8 텍스트로 읽기
       try{
         const text=new TextDecoder('utf-8',{fatal:false}).decode(bytes);
-        const printable=text.replace(/[^\uAC00-\uD7A3\u1100-\u11FF\w\s.,!?:;\-()]/g,' ').replace(/\s+/g,' ').trim();
-        if(printable.length>50) return resolve(printable);
+        const p=text.replace(/[^\uAC00-\uD7A3\u1100-\u11FF\w\s.,!?:;\-()]/g,' ').replace(/\s+/g,' ').trim();
+        if(p.length>50)return resolve(p);
       }catch(err){}
-
-      reject(new Error('이 파일 형식에서는 텍스트를 추출하기 어렵습니다. txt 파일로 변환하거나, 내용을 복사해서 txt 파일로 저장 후 다시 시도해주세요.'));
+      reject(new Error('이 파일에서 텍스트를 추출하기 어렵습니다. txt 파일로 저장 후 다시 시도해주세요.'));
     };
     reader.onerror=()=>reject(new Error('파일 읽기 실패'));
     reader.readAsArrayBuffer(file);
   });
 }
-
-function extractZipXmlText(bytes, targetEntry){
-  // ZIP local file header 파싱 - PK\x03\x04 시그니처 찾기
-  const sig=[0x50,0x4B,0x03,0x04];
-  let pos=0;
-  const texts=[];
+function extractZipXmlText(bytes){
+  const sig=[0x50,0x4B,0x03,0x04];let pos=0;const texts=[];
   while(pos<bytes.length-30){
     if(bytes[pos]===sig[0]&&bytes[pos+1]===sig[1]&&bytes[pos+2]===sig[2]&&bytes[pos+3]===sig[3]){
       const fnLen=bytes[pos+26]|(bytes[pos+27]<<8);
       const extraLen=bytes[pos+28]|(bytes[pos+29]<<8);
       const compMethod=bytes[pos+8]|(bytes[pos+9]<<8);
       const compSize=bytes[pos+18]|(bytes[pos+19]<<8)|(bytes[pos+20]<<16)|(bytes[pos+21]<<24);
-      const fnBytes=bytes.slice(pos+30,pos+30+fnLen);
-      const fn=new TextDecoder().decode(fnBytes);
+      const fn=new TextDecoder().decode(bytes.slice(pos+30,pos+30+fnLen));
       const dataStart=pos+30+fnLen+extraLen;
-      if(compMethod===0&&(fn===targetEntry||fn.includes('document.xml')||fn.includes('section'))){
+      if(compMethod===0&&(fn.includes('document.xml')||fn.includes('section'))){
         const raw=new TextDecoder('utf-8',{fatal:false}).decode(bytes.slice(dataStart,dataStart+compSize));
         const matches=raw.match(/<w:t[^>]*>([^<]+)<\/w:t>|<t>([^<]+)<\/t>/g)||[];
         texts.push(...matches.map(m=>m.replace(/<[^>]+>/g,'')));
       }
       pos=dataStart+Math.max(0,compSize);
-    } else { pos++; }
+    }else{pos++;}
   }
   return texts.join(' ');
 }
 
 /* ── 업무분야 CRUD ── */
 document.getElementById('addCategoryBtn').addEventListener('click',()=>{
+  if(!STATE.isAdmin)return toast('관리자만 추가할 수 있습니다.');
   openModal(`
     <h3>업무분야 추가</h3>
     <div class="field"><label>업무분야명</label><input type="text" id="m-name" placeholder="예: 생활지도, 방과후학교"></div>
@@ -1002,20 +1111,20 @@ document.getElementById('addCategoryBtn').addEventListener('click',()=>{
     </div>`);
   document.getElementById('m-submit').addEventListener('click',async()=>{
     const name=document.getElementById('m-name').value.trim();
-    if(!name) return toast('업무분야명을 입력하세요.');
+    if(!name)return toast('업무분야명을 입력하세요.');
     try{
       const res=await api('addCategory',{name,
         owner:document.getElementById('m-owner').value.trim(),
         desc:document.getElementById('m-desc').value.trim()});
-      closeModal(); toast('추가되었습니다.');
+      closeModal();toast('추가되었습니다.');
       const data=await api('getAll');
-      STATE.categories=data.categories; STATE.stagesByCategory=data.stagesByCategory;
-      renderCategoryList(); selectCategory(res.id);
+      STATE.categories=data.categories;STATE.stagesByCategory=data.stagesByCategory;
+      renderCategoryList();selectCategory(res.id);
     }catch(e){toast('실패: '+e.message);}
   });
 });
-
 document.getElementById('editCategoryBtn').addEventListener('click',()=>{
+  if(!STATE.isAdmin)return toast('관리자만 수정할 수 있습니다.');
   const cat=STATE.categories.find(c=>c.id===STATE.currentCategoryId);
   openModal(`
     <h3>업무분야 수정</h3>
@@ -1031,21 +1140,21 @@ document.getElementById('editCategoryBtn').addEventListener('click',()=>{
       name:document.getElementById('m-name').value.trim(),
       owner:document.getElementById('m-owner').value.trim(),
       desc:document.getElementById('m-desc').value.trim()});
-    closeModal(); toast('수정되었습니다.');
+    closeModal();toast('수정되었습니다.');
     const data=await api('getAll');
-    STATE.categories=data.categories; STATE.stagesByCategory=data.stagesByCategory;
-    renderCategoryList(); selectCategory(cat.id);
+    STATE.categories=data.categories;STATE.stagesByCategory=data.stagesByCategory;
+    renderCategoryList();selectCategory(cat.id);
   });
 });
-
 document.getElementById('deleteCategoryBtn').addEventListener('click',async()=>{
+  if(!STATE.isAdmin)return toast('관리자만 삭제할 수 있습니다.');
   const cat=STATE.categories.find(c=>c.id===STATE.currentCategoryId);
-  if(!confirm(`"${cat.name}" 분야를 숨기겠습니까? (데이터 보존)`)) return;
-  await api('deleteCategory',{id:cat.id}); toast('삭제되었습니다.');
+  if(!confirm(`"${cat.name}" 분야를 숨기겠습니까?`))return;
+  await api('deleteCategory',{id:cat.id});toast('삭제되었습니다.');
   const data=await api('getAll');
-  STATE.categories=data.categories; STATE.stagesByCategory=data.stagesByCategory;
+  STATE.categories=data.categories;STATE.stagesByCategory=data.stagesByCategory;
   renderCategoryList();
-  if(STATE.categories.length>0) selectCategory(STATE.categories[0].id);
+  if(STATE.categories.length>0)selectCategory(STATE.categories[0].id);
   else{
     document.getElementById('stageNav').style.display='none';
     document.getElementById('contentArea').style.display='none';
@@ -1053,7 +1162,7 @@ document.getElementById('deleteCategoryBtn').addEventListener('click',async()=>{
   }
 });
 
-/* ── 학교명 변경 ── */
+/* ── 학교명 ── */
 document.getElementById('schoolNameLabel').addEventListener('click',()=>{
   openModal(`
     <h3>학교명 변경</h3>
@@ -1065,15 +1174,14 @@ document.getElementById('schoolNameLabel').addEventListener('click',()=>{
     </div>`);
   document.getElementById('m-submit').addEventListener('click',async()=>{
     const name=document.getElementById('m-school').value.trim();
-    if(!name) return toast('학교명을 입력하세요.');
+    if(!name)return toast('학교명을 입력하세요.');
     await api('updateSchoolName',{schoolName:name});
-    STATE.schoolName=name;
-    document.getElementById('schoolNameLabel').textContent=name;
-    closeModal(); toast('변경되었습니다.');
+    STATE.schoolName=name;document.getElementById('schoolNameLabel').textContent=name;
+    closeModal();toast('변경되었습니다.');
   });
 });
 
-/* ── 파일 업로드 (일반 첨부) ── */
+/* ── 파일 업로드 ── */
 let selectedFile=null;
 function setupFileDrop(){
   selectedFile=null;
@@ -1083,46 +1191,36 @@ function setupFileDrop(){
   drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag-over');});
   drop.addEventListener('dragleave',()=>drop.classList.remove('drag-over'));
   drop.addEventListener('drop',e=>{
-    e.preventDefault(); drop.classList.remove('drag-over');
-    if(e.dataTransfer.files.length) setDropFile(e.dataTransfer.files[0]);
+    e.preventDefault();drop.classList.remove('drag-over');
+    if(e.dataTransfer.files.length)setFile(e.dataTransfer.files[0]);
   });
-  input.addEventListener('change',()=>{ if(input.files.length) setDropFile(input.files[0]); });
-
-  function setDropFile(file){
-    selectedFile=file;
-    drop.classList.add('has-file');
-    drop.querySelector('.drop-icon').textContent='✅';
+  input.addEventListener('change',()=>{if(input.files.length)setFile(input.files[0]);});
+  function setFile(file){
+    selectedFile=file;drop.classList.add('has-file');
     drop.innerHTML=`<div class="drop-icon">✅</div><div>${esc(file.name)}</div><div class="drop-hint">${(file.size/1024).toFixed(1)} KB · 클릭하면 다시 선택</div>`;
     drop.addEventListener('click',()=>input.click(),{once:true});
   }
 }
-
 function fileToBase64(file){
   return new Promise((res,rej)=>{
     const r=new FileReader();
-    r.onload=e=>res(e.target.result.split(',')[1]);
-    r.onerror=rej; r.readAsDataURL(file);
+    r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);
   });
 }
-
 async function uploadIfFileSelected(){
-  if(!selectedFile) return null;
+  if(!selectedFile)return null;
   const base64Data=await fileToBase64(selectedFile);
   const cat=STATE.categories.find(c=>c.id===STATE.currentCategoryId);
   try{
-    const res=await fetch(API_URL,{
-      method:'POST',
+    const res=await fetch(API_URL,{method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify({action:'uploadFile',payload:{
-        fileName:selectedFile.name,
-        mimeType:selectedFile.type||'application/octet-stream',
-        base64Data,categoryName:cat?cat.name:''
-      }})
-    });
+        fileName:selectedFile.name,mimeType:selectedFile.type||'application/octet-stream',
+        base64Data,categoryName:cat?cat.name:''}})});
     const data=JSON.parse(await res.text());
-    if(!data.ok) throw new Error(data.error);
+    if(!data.ok)throw new Error(data.error);
     return data;
-  }catch(e){ toast('파일 업로드 실패: '+e.message); return null; }
+  }catch(e){toast('파일 업로드 실패: '+e.message);return null;}
 }
 
 /* ── 모달 ── */
@@ -1131,11 +1229,10 @@ function openModal(html){
   document.getElementById('modalOverlay').classList.add('show');
 }
 function closeModal(){
-  document.getElementById('modalOverlay').classList.remove('show');
-  selectedFile=null;
+  document.getElementById('modalOverlay').classList.remove('show');selectedFile=null;
 }
 document.getElementById('modalOverlay').addEventListener('click',e=>{
-  if(e.target.id==='modalOverlay') closeModal();
+  if(e.target.id==='modalOverlay')closeModal();
 });
 
 init();
