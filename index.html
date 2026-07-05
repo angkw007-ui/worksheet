@@ -452,7 +452,7 @@ textarea{resize:vertical;min-height:76px;}
 
 <script>
 /* ── 설정 ── */
-const API_URL = 'https://script.google.com/macros/s/AKfycbz5SSfRM6n1gz8Dd-yBzfXhwcsT11L2PW3XkLRIbW2-OK8f9dKRlWhhK1nXEpmKXCE/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyRL9VSd57QsTlXvSGL1CqcFsH859noxR83ItSdw7jDP806OI51lBTPGUE7zJnxno6L/exec';
 // 관리자 비밀번호 목록 (Apps Script ADMIN_EMAILS 와 별개로 클라이언트 측 간단 인증)
 // 실제 배포 시 이 목록을 원하는 이메일+비밀번호 쌍으로 수정하세요.
 const ADMIN_ACCOUNTS = [
@@ -741,30 +741,30 @@ document.getElementById('addDocBtn').addEventListener('click',()=>{
       <select id="m-type"><option value="결재예시">결재예시</option><option value="서식">서식</option></select>
     </div>
     <div class="field"><label>제목</label><input type="text" id="m-title" placeholder="예: 학교폭력 사안보고 결재문"></div>
-    <div class="field"><label>설명 (선택)</label><textarea id="m-desc" style="min-height:55px;"></textarea></div>
+    <div class="field"><label>설명 (선택)</label><textarea id="m-desc" style="min-height:50px;"></textarea></div>
     <div class="field">
-      <label>첨부파일 (hwp, hwpx, pdf, docx 등)</label>
-      <div class="file-drop" id="m-filedrop">
-        <div class="drop-icon">📎</div>
-        <div>클릭하거나 드래그하세요</div>
-        <div class="drop-hint">hwp, hwpx, pdf, docx, xlsx 등 모든 형식 가능</div>
-      </div>
-      <input type="file" id="m-fileinput" style="display:none;">
+      <label>파일명 (선택)</label>
+      <input type="text" id="m-filename" placeholder="예: 학교폭력사안보고.hwp">
+    </div>
+    <div class="field">
+      <label>Google Drive 공유 링크 (선택)</label>
+      <input type="text" id="m-fileurl" placeholder="Drive에서 파일 우클릭 → 링크 복사 → 붙여넣기">
+      <div class="hint">📌 Drive에서 파일 선택 → 우클릭 → "링크 복사" 후 붙여넣으세요.<br>붙여넣은 링크는 자동으로 다운로드 링크로 변환됩니다.</div>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal()">취소</button>
       <button class="btn-primary" id="m-submit">추가</button>
     </div>`);
-  setupFileDrop();
   document.getElementById('m-submit').addEventListener('click',async()=>{
     const title=document.getElementById('m-title').value.trim();
     if(!title)return toast('제목을 입력하세요.');
-    const fi=await uploadIfFileSelected();
+    const rawUrl=document.getElementById('m-fileurl').value.trim();
+    const {fileUrl, downloadUrl}=parseDriveUrl(rawUrl);
+    const fileName=document.getElementById('m-filename').value.trim() || (rawUrl ? '파일 열기' : '');
     await api('addDoc',{categoryId:STATE.currentCategoryId,stageId:STATE.currentStageId,title,
       type:document.getElementById('m-type').value,
       desc:document.getElementById('m-desc').value.trim(),
-      fileUrl:fi?fi.fileUrl:'',fileName:fi?fi.fileName:'',
-      downloadUrl:fi?fi.downloadUrl:''});
+      fileUrl, fileName, downloadUrl});
     closeModal();toast('추가되었습니다.');loadDocs();
   });
 });
@@ -805,27 +805,27 @@ document.getElementById('addLawBtn').addEventListener('click',()=>{
     <div class="field"><label>제목</label><input type="text" id="m-title" placeholder="예: 학교폭력예방법 시행령 개정 안내"></div>
     <div class="field"><label>법령명 / 공문번호</label><input type="text" id="m-lawname" placeholder="예: 교육부 OO과-1234"></div>
     <div class="field">
-      <label>첨부파일 (선택)</label>
-      <div class="file-drop" id="m-filedrop">
-        <div class="drop-icon">📎</div>
-        <div>클릭하거나 드래그하세요</div>
-        <div class="drop-hint">hwp, hwpx, pdf, docx 등</div>
-      </div>
-      <input type="file" id="m-fileinput" style="display:none;">
+      <label>파일명 (선택)</label>
+      <input type="text" id="m-filename" placeholder="예: 학교폭력예방법시행령.hwp">
+    </div>
+    <div class="field">
+      <label>Google Drive 공유 링크 (선택)</label>
+      <input type="text" id="m-fileurl" placeholder="Drive에서 파일 우클릭 → 링크 복사 → 붙여넣기">
+      <div class="hint">📌 Drive에서 파일 선택 → 우클릭 → "링크 복사" 후 붙여넣으세요.</div>
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal()">취소</button>
       <button class="btn-primary" id="m-submit">추가</button>
     </div>`);
-  setupFileDrop();
   document.getElementById('m-submit').addEventListener('click',async()=>{
     const title=document.getElementById('m-title').value.trim();
     if(!title)return toast('제목을 입력하세요.');
-    const fi=await uploadIfFileSelected();
+    const rawUrl=document.getElementById('m-fileurl').value.trim();
+    const {fileUrl, downloadUrl}=parseDriveUrl(rawUrl);
+    const fileName=document.getElementById('m-filename').value.trim() || (rawUrl ? '파일 열기' : '');
     await api('addLaw',{categoryId:STATE.currentCategoryId,title,
       lawName:document.getElementById('m-lawname').value.trim(),
-      fileUrl:fi?fi.fileUrl:'',fileName:fi?fi.fileName:'',
-      downloadUrl:fi?fi.downloadUrl:''});
+      fileUrl, fileName, downloadUrl});
     closeModal();toast('추가되었습니다.');loadLaws();
   });
 });
@@ -1202,71 +1202,28 @@ document.getElementById('schoolNameLabel').addEventListener('click',()=>{
   });
 });
 
-/* ── 파일 업로드 ── */
-let selectedFile=null;
-function setupFileDrop(){
-  selectedFile=null;
-  const drop=document.getElementById('m-filedrop');
-  const input=document.getElementById('m-fileinput');
-  drop.addEventListener('click',()=>input.click());
-  drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag-over');});
-  drop.addEventListener('dragleave',()=>drop.classList.remove('drag-over'));
-  drop.addEventListener('drop',e=>{
-    e.preventDefault();drop.classList.remove('drag-over');
-    if(e.dataTransfer.files.length)setFile(e.dataTransfer.files[0]);
-  });
-  input.addEventListener('change',()=>{if(input.files.length)setFile(input.files[0]);});
-  function setFile(file){
-    selectedFile=file;drop.classList.add('has-file');
-    drop.innerHTML=`<div class="drop-icon">✅</div><div>${esc(file.name)}</div><div class="drop-hint">${(file.size/1024).toFixed(1)} KB · 클릭하면 다시 선택</div>`;
-    drop.addEventListener('click',()=>input.click(),{once:true});
-  }
-}
-function fileToBase64(file){
-  return new Promise((res,rej)=>{
-    const r=new FileReader();
-    r.onload=e=>res(e.target.result.split(',')[1]);r.onerror=rej;r.readAsDataURL(file);
-  });
-}
+
+/* ── Drive URL 파싱 ── */
 /**
- * 파일 업로드 — JSONP 청크 방식 (CORS 완전 우회)
- * base64 데이터를 30KB 청크로 나눠서 순차적으로 JSONP GET으로 전송
- * 마지막 청크에서 Drive에 파일 조합 저장
+ * Google Drive 공유 링크 → 뷰/다운로드 링크 변환
+ * 지원 형식:
+ *   https://drive.google.com/file/d/FILE_ID/view?...
+ *   https://drive.google.com/open?id=FILE_ID
+ *   https://docs.google.com/document/d/FILE_ID/edit
+ *   기타 일반 URL (그대로 사용)
  */
-async function uploadIfFileSelected(){
-  if(!selectedFile) return null;
-  const base64Data = await fileToBase64(selectedFile);
-  const cat = STATE.categories.find(c=>c.id===STATE.currentCategoryId);
-  const CHUNK = 30000; // 30KB per chunk (URL 길이 한계 고려)
-  const total = Math.ceil(base64Data.length / CHUNK);
-  const uploadId = 'up_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
-
-  toast('파일 업로드 중... (0/' + total + ')');
-
-  try{
-    let result = null;
-    for(let i=0; i<total; i++){
-      const chunk = base64Data.slice(i*CHUNK, (i+1)*CHUNK);
-      const isLast = (i === total-1);
-      const data = await api('uploadChunk', {
-        uploadId,
-        chunkIndex: i,
-        totalChunks: total,
-        chunk,
-        isLast,
-        fileName: selectedFile.name,
-        mimeType: selectedFile.type || 'application/octet-stream',
-        categoryName: cat ? cat.name : ''
-      });
-      if(isLast) result = data;
-      if(total > 1) toast(`파일 업로드 중... (${i+1}/${total})`);
-    }
-    toast('파일 업로드 완료!');
-    return result;
-  }catch(e){
-    toast('파일 업로드 실패: ' + e.message);
-    return null;
+function parseDriveUrl(raw){
+  if(!raw) return {fileUrl:'', downloadUrl:''};
+  let m = raw.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+  if(!m) m = raw.match(/[?&]id=([a-zA-Z0-9_-]{10,})/);
+  if(m){
+    const id = m[1];
+    return {
+      fileUrl:     `https://drive.google.com/file/d/${id}/view`,
+      downloadUrl: `https://drive.google.com/uc?export=download&id=${id}`
+    };
   }
+  return { fileUrl: raw, downloadUrl: raw };
 }
 
 /* ── 모달 ── */
@@ -1275,7 +1232,7 @@ function openModal(html){
   document.getElementById('modalOverlay').classList.add('show');
 }
 function closeModal(){
-  document.getElementById('modalOverlay').classList.remove('show');selectedFile=null;
+  document.getElementById('modalOverlay').classList.remove('show');
 }
 document.getElementById('modalOverlay').addEventListener('click',e=>{
   if(e.target.id==='modalOverlay')closeModal();
