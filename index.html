@@ -452,7 +452,7 @@ textarea{resize:vertical;min-height:76px;}
 
 <script>
 /* ── 설정 ── */
-const API_URL = 'https://script.google.com/macros/s/AKfycbyGFLtrjrJufUD6IUVvCzadlZkFGZsDjpMXeL_6J8ieRgRvmSybGycB6Vh8tYNyunLc/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyRL9VSd57QsTlXvSGL1CqcFsH859noxR83ItSdw7jDP806OI51lBTPGUE7zJnxno6L/exec';
 // 관리자 비밀번호 목록 (Apps Script ADMIN_EMAILS 와 별개로 클라이언트 측 간단 인증)
 // 실제 배포 시 이 목록을 원하는 이메일+비밀번호 쌍으로 수정하세요.
 const ADMIN_ACCOUNTS = [
@@ -748,7 +748,11 @@ async function loadDocs(){
   try{
     const {docs}=await api('getDocs',{stageId:STATE.currentStageId});
     if(!docs.length){el.innerHTML='<div class="empty-col">결재예시·서식이 없습니다</div>';return;}
-    el.innerHTML=docs.map(d=>`
+    el.innerHTML=docs.map(d=>{
+      // fileUrl에서 Drive 파일 ID 추출 → 다운로드 링크 생성
+      const {fileUrl, downloadUrl} = parseDriveUrl(d.fileUrl||d.downloadUrl||'');
+      const hasFile = !!(fileUrl);
+      return `
       <div class="doc-item" data-id="${d.id}">
         <div class="doc-item-top">
           <div>
@@ -758,15 +762,19 @@ async function loadDocs(){
           <button class="item-del">✕</button>
         </div>
         ${d.desc?`<div class="doc-sub">${esc(d.desc)}</div>`:''}
-        ${d.fileUrl
-          ?`<a class="dl-btn" href="${esc(d.downloadUrl||d.fileUrl)}" target="_blank">⬇ ${esc(d.fileName||'다운로드')}</a>`
-          :`<span class="doc-sub" style="color:var(--muted);font-size:11px;">첨부파일 없음</span>`
+        ${hasFile
+          ?`<a class="dl-btn" href="${esc(downloadUrl||fileUrl)}" target="_blank" rel="noopener">⬇ ${esc(d.fileName||'다운로드')}</a>`
+          :`<span style="font-size:11px;color:var(--muted);">첨부파일 없음</span>`
         }
-      </div>`).join('');
+      </div>`;
+    }).join('');
     el.querySelectorAll('.item-del').forEach(b=>b.addEventListener('click',async()=>{
       if(!STATE.isAdmin)return toast('관리자만 삭제할 수 있습니다.');
       if(!confirm('삭제할까요?'))return;
-      await api('deleteDoc',{id:b.closest('.doc-item').dataset.id});loadDocs();
+      try{
+        await api('deleteDoc',{id:b.closest('.doc-item').dataset.id});
+        loadDocs();
+      }catch(e){ toast('삭제 실패: '+e.message); }
     }));
   }catch(e){el.innerHTML=`<div class="empty-col">오류: ${esc(e.message)}</div>`;}
 }
@@ -815,24 +823,27 @@ async function loadLaws(){
   try{
     const {laws}=await api('getLaws',{categoryId:STATE.currentCategoryId});
     if(!laws.length){el.innerHTML='<div class="empty-col">관련 법령·공문이 없습니다</div>';return;}
-    el.innerHTML=laws.map(l=>`
+    el.innerHTML=laws.map(l=>{
+      const {fileUrl, downloadUrl}=parseDriveUrl(l.fileUrl||l.downloadUrl||'');
+      return `
       <div class="doc-item" data-id="${l.id}">
         <div class="doc-item-top">
           <span class="doc-title">${esc(l.title)}</span>
           <button class="item-del">✕</button>
         </div>
         ${l.lawName?`<div class="doc-sub">${esc(l.lawName)}</div>`:''}
-        ${l.fileUrl?`
-          <div class="doc-foot">
-            <a class="dl-btn" href="${l.downloadUrl||l.fileUrl}" target="_blank" download>
-              ⬇ ${esc(l.fileName||'다운로드')}
-            </a>
-          </div>`:''}
-      </div>`).join('');
+        ${fileUrl
+          ?`<a class="dl-btn" href="${esc(downloadUrl||fileUrl)}" target="_blank" rel="noopener">⬇ ${esc(l.fileName||'다운로드')}</a>`
+          :''}
+      </div>`;
+    }).join('');
     el.querySelectorAll('.item-del').forEach(b=>b.addEventListener('click',async()=>{
       if(!STATE.isAdmin)return toast('관리자만 삭제할 수 있습니다.');
       if(!confirm('삭제할까요?'))return;
-      await api('deleteLaw',{id:b.closest('.doc-item').dataset.id});loadLaws();
+      try{
+        await api('deleteLaw',{id:b.closest('.doc-item').dataset.id});
+        loadLaws();
+      }catch(e){ toast('삭제 실패: '+e.message); }
     }));
   }catch(e){el.innerHTML=`<div class="empty-col">오류: ${esc(e.message)}</div>`;}
 }
