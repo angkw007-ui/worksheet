@@ -161,7 +161,7 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 }
 .task-check.checked{background:var(--pine);border-color:var(--pine);color:#fff;}
 .task-body{flex:1;min-width:0;}
-.task-content{font-size:12.5px;font-weight:500;line-height:1.45;}
+.task-content{font-size:12.5px;font-weight:500;line-height:1.55;white-space:pre-wrap;word-break:break-word;}
 .task-item.done .task-content{text-decoration:line-through;}
 .task-note{font-size:10.5px;color:var(--muted);margin-top:2px;}
 /* 수정/삭제 버튼 — 누구나 완료 체크, 수정·삭제는 관리자만 */
@@ -452,7 +452,7 @@ textarea{resize:vertical;min-height:76px;}
 
 <script>
 /* ── 설정 ── */
-const API_URL = 'https://script.google.com/macros/s/AKfycbwCRCWGDQiLiLB6ycHsmP-lC5sF1VzVN7YyBBA5eL3J7FVJfBfCGMQgSgVw6SlcK3YF/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyRL9VSd57QsTlXvSGL1CqcFsH859noxR83ItSdw7jDP806OI51lBTPGUE7zJnxno6L/exec';
 // 관리자 비밀번호 목록 (Apps Script ADMIN_EMAILS 와 별개로 클라이언트 측 간단 인증)
 // 실제 배포 시 이 목록을 원하는 이메일+비밀번호 쌍으로 수정하세요.
 const ADMIN_ACCOUNTS = [
@@ -672,7 +672,7 @@ async function loadTasks(){
     const {tasks}=await api('getTasks',{stageId:STATE.currentStageId});
     if(!tasks.length){el.innerHTML='<div class="empty-col">할일이 없습니다</div>';return;}
     el.innerHTML=tasks.map(t=>`
-      <div class="task-item ${t.done?'done':''}" data-id="${t.id}">
+      <div class="task-item ${t.done?'done':''}" data-id="${t.id}" data-text="${esc(t.content)}">
         <div class="task-check ${t.done?'checked':''}">${t.done?'✓':''}</div>
         <div class="task-body">
           <div class="task-content">${esc(t.content)}</div>
@@ -693,12 +693,19 @@ async function loadTasks(){
     el.querySelectorAll('[data-action="edit"]').forEach(b=>b.addEventListener('click',()=>{
       if(!STATE.isAdmin)return toast('관리자만 수정할 수 있습니다.');
       const item=b.closest('.task-item');
-      const content=item.querySelector('.task-content').textContent;
-      const note=item.querySelector('.task-note')?.textContent.replace('📌 ','').replace('👤 ','');
+      const content=item.dataset.text||item.querySelector('.task-content').textContent;
+      const noteEl=item.querySelectorAll('.task-note');
+      // 비고(📌)와 담당자(👤) 구분해서 가져오기
+      let note='', owner='';
+      noteEl.forEach(el=>{
+        if(el.textContent.startsWith('📌')) note=el.textContent.replace('📌 ','');
+        if(el.textContent.startsWith('👤')) owner=el.textContent.replace('👤 ','');
+      });
       openModal(`
         <h3>할일 수정</h3>
-        <div class="field"><label>할일 내용</label><textarea id="m-content">${esc(content)}</textarea></div>
-        <div class="field"><label>비고</label><input type="text" id="m-note" value="${esc(note||'')}"></div>
+        <div class="field"><label>할일 내용</label><textarea id="m-content" style="min-height:120px;">${esc(content)}</textarea></div>
+        <div class="field"><label>비고</label><input type="text" id="m-note" value="${esc(note)}"></div>
+        <div class="field"><label>담당자</label><input type="text" id="m-owner" value="${esc(owner)}"></div>
         <div class="modal-actions">
           <button class="btn-secondary" onclick="closeModal()">취소</button>
           <button class="btn-primary seal" id="m-submit">저장</button>
@@ -706,7 +713,8 @@ async function loadTasks(){
       document.getElementById('m-submit').addEventListener('click',async()=>{
         await api('updateTask',{id:item.dataset.id,
           content:document.getElementById('m-content').value.trim(),
-          note:document.getElementById('m-note').value.trim()});
+          note:document.getElementById('m-note').value.trim(),
+          owner:document.getElementById('m-owner').value.trim()});
         closeModal();toast('수정되었습니다.');loadTasks();
       });
     }));
@@ -724,7 +732,7 @@ document.getElementById('addTaskBtn').addEventListener('click',()=>{
   if(!STATE.currentStageId)return toast('단계를 먼저 선택하세요.');
   openModal(`
     <h3>할일 추가</h3>
-    <div class="field"><label>할일 내용</label><textarea id="m-content" placeholder="예: 보호자에게 48시간 이내 사안 통보"></textarea></div>
+    <div class="field"><label>할일 내용</label><textarea id="m-content" style="min-height:100px;" placeholder="예: 보호자에게 48시간 이내 사안 통보&#10;줄바꿈은 Enter키를 누르세요."></textarea></div>
     <div class="field"><label>비고</label><input type="text" id="m-note" placeholder="기한, 참고사항"></div>
     <div class="field"><label>담당자</label><input type="text" id="m-owner"></div>
     <div class="modal-actions">
