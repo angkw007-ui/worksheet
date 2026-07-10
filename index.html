@@ -36,10 +36,26 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
   display:inline-block;transform:rotate(45deg);margin-right:6px;}
 .brand h1{font-size:13.5px;font-weight:800;margin:0;display:inline;}
 .brand-notice{
-  font-size:10px;color:var(--muted);margin:6px 0 0;line-height:1.5;
-  padding:6px 8px;background:var(--seal-soft);border-radius:6px;
-  border-left:2px solid var(--seal);
+  font-size:10.5px;color:var(--seal);font-weight:700;margin:6px 0 0;line-height:1.55;
+  padding:7px 10px;background:var(--seal-soft);border-radius:6px;
+  border-left:3px solid var(--seal);
 }
+
+/* 잠금 업무분야 */
+.cat-item .lock-icon{font-size:11px;color:var(--muted);margin-left:4px;flex-shrink:0;}
+.cat-item.locked{opacity:0.7;}
+.cat-item.locked .cat-dot{background:var(--muted);}
+.locked-overlay{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:60px 20px;gap:10px;color:var(--muted);font-size:13px;text-align:center;
+}
+.locked-overlay .lock-big{font-size:36px;margin-bottom:4px;}
+.locked-overlay .lock-name{font-size:15px;font-weight:700;color:var(--ink);}
+.locked-overlay .btn-unlock{
+  margin-top:8px;background:var(--seal);color:#fff;border:none;border-radius:8px;
+  padding:9px 20px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;
+}
+.locked-overlay .btn-unlock:hover{opacity:.88;}
 
 .cat-list{display:flex;flex-direction:column;gap:2px;flex:1;overflow-y:auto;}
 .cat-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;
@@ -609,7 +625,8 @@ const ADMIN_ACCOUNTS = [
 let STATE = {
   categories:[], stagesByCategory:{},
   currentCategoryId:null, currentStageId:null,
-  isAdmin:false, userEmail:'', schoolName:'학교명 설정'
+  isAdmin:false, userEmail:'', schoolName:'학교명 설정',
+  unlockedCats: new Set()  // 비밀번호 인증 완료된 업무분야 id 집합
 };
 
 /* ── JSONP API ── */
@@ -752,23 +769,79 @@ function testApiDirect(){
 function renderCategoryList(){
   const el=document.getElementById('catList');
   el.innerHTML=STATE.categories.map(c=>`
-    <div class="cat-item ${c.id===STATE.currentCategoryId?'active':''}" data-id="${c.id}">
+    <div class="cat-item ${c.id===STATE.currentCategoryId?'active':''} ${c.hasPassword&&!STATE.unlockedCats.has(c.id)&&!STATE.isAdmin?'locked':''}" data-id="${c.id}">
       <span class="cat-dot"></span>${esc(c.name)}
+      ${c.hasPassword&&!STATE.unlockedCats.has(c.id)&&!STATE.isAdmin?'<span class="lock-icon">🔒</span>':''}
       <span class="owner">${esc(c.owner||'')}</span>
     </div>`).join('');
   el.querySelectorAll('.cat-item').forEach(e=>e.addEventListener('click',()=>selectCategory(e.dataset.id)));
 }
 
 function selectCategory(id){
-  STATE.currentCategoryId=id;STATE.currentStageId=null;
+  const cat=STATE.categories.find(c=>c.id===id);
+  if(!cat) return;
+
+  // 비밀번호 있는 업무분야 & 관리자 아님 & 아직 미인증
+  if(cat.hasPassword && !STATE.isAdmin && !STATE.unlockedCats.has(id)){
+    showPasswordPrompt(cat);
+    return;
+  }
+
+  STATE.currentCategoryId=id; STATE.currentStageId=null;
   renderCategoryList();
-  const cat=STATE.categories.find(c=>c.id===id);if(!cat)return;
   document.getElementById('emptyMain').style.display='none';
   document.getElementById('stageNav').style.display='';
   document.getElementById('contentArea').style.display='';
   document.getElementById('catTitle').textContent=cat.name;
   document.getElementById('catDesc').textContent=cat.desc||'';
   renderStageNav();
+}
+
+/** 비밀번호 입력 모달 */
+function showPasswordPrompt(cat){
+  openModal(`
+    <h3>🔒 잠긴 업무분야</h3>
+    <div class="sub" style="margin-bottom:14px;">
+      <b>${esc(cat.name)}</b>은(는) 비밀번호로 보호되어 있습니다.<br>비밀번호를 입력하면 내용을 볼 수 있습니다.
+    </div>
+    <div class="field">
+      <label>비밀번호</label>
+      <input type="password" id="m-cat-pw" placeholder="비밀번호 입력" autocomplete="off">
+    </div>
+    <div id="m-pw-err" style="font-size:12px;color:var(--seal);display:none;margin-bottom:6px;">비밀번호가 올바르지 않습니다.</div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">취소</button>
+      <button class="btn-primary seal" id="m-pw-submit">확인</button>
+    </div>`);
+
+  const doVerify = async ()=>{
+    const pw = document.getElementById('m-cat-pw').value;
+    if(!pw) return;
+    try{
+      const res = await api('verifyPassword', { categoryId: cat.id, password: pw });
+      if(res.verified){
+        STATE.unlockedCats.add(cat.id);
+        closeModal();
+        // 인증 성공 → 바로 진입
+        STATE.currentCategoryId=cat.id; STATE.currentStageId=null;
+        renderCategoryList();
+        document.getElementById('emptyMain').style.display='none';
+        document.getElementById('stageNav').style.display='';
+        document.getElementById('contentArea').style.display='';
+        document.getElementById('catTitle').textContent=cat.name;
+        document.getElementById('catDesc').textContent=cat.desc||'';
+        renderStageNav();
+        toast('✅ 인증되었습니다.');
+      } else {
+        document.getElementById('m-pw-err').style.display='block';
+        document.getElementById('m-cat-pw').value='';
+        document.getElementById('m-cat-pw').focus();
+      }
+    }catch(e){ toast('오류: '+e.message); }
+  };
+  document.getElementById('m-pw-submit').addEventListener('click', doVerify);
+  document.getElementById('m-cat-pw').addEventListener('keydown', e=>{ if(e.key==='Enter') doVerify(); });
+  setTimeout(()=>{ const el=document.getElementById('m-cat-pw'); if(el) el.focus(); }, 100);
 }
 
 /* ── 단계 세로 네비 ── */
@@ -1348,6 +1421,11 @@ document.getElementById('addCategoryBtn').addEventListener('click',()=>{
     <div class="field"><label>업무분야명</label><input type="text" id="m-name" placeholder="예: 생활지도, 방과후학교"></div>
     <div class="field"><label>담당자 (선택)</label><input type="text" id="m-owner"></div>
     <div class="field"><label>설명 (선택)</label><textarea id="m-desc" style="min-height:55px;"></textarea></div>
+    <div class="field">
+      <label>비밀번호 (선택)</label>
+      <input type="password" id="m-password" placeholder="입력하면 비번 아는 사람만 열람 가능. 비워두면 누구나 접근.">
+      <div class="hint">🔒 비밀번호를 설정하면 해당 업무분야는 잠기고, 비번을 아는 사람만 내용을 볼 수 있습니다.</div>
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal()">취소</button>
       <button class="btn-primary seal" id="m-submit">추가</button>
@@ -1358,7 +1436,8 @@ document.getElementById('addCategoryBtn').addEventListener('click',()=>{
     try{
       const res=await api('addCategory',{name,
         owner:document.getElementById('m-owner').value.trim(),
-        desc:document.getElementById('m-desc').value.trim()});
+        desc:document.getElementById('m-desc').value.trim(),
+        password:document.getElementById('m-password').value.trim()});
       closeModal();toast('추가되었습니다.');
       const data=await api('getAll');
       STATE.categories=data.categories;STATE.stagesByCategory=data.stagesByCategory;
@@ -1374,18 +1453,31 @@ document.getElementById('editCategoryBtn').addEventListener('click',()=>{
     <div class="field"><label>업무분야명</label><input type="text" id="m-name" value="${esc(cat.name)}"></div>
     <div class="field"><label>담당자</label><input type="text" id="m-owner" value="${esc(cat.owner||'')}"></div>
     <div class="field"><label>설명</label><textarea id="m-desc" style="min-height:55px;">${esc(cat.desc||'')}</textarea></div>
+    <div class="field">
+      <label>비밀번호 변경 (선택)</label>
+      <input type="password" id="m-password" placeholder="변경할 비밀번호 (비워두면 기존 유지, 삭제하려면 공백 1칸)">
+      <div class="hint">현재 잠금: ${cat.hasPassword?'🔒 설정됨':'🔓 없음'}<br>비워두면 기존 비밀번호 유지. 잠금 해제하려면 공백(스페이스) 한 번 입력 후 저장.</div>
+    </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal()">취소</button>
       <button class="btn-primary seal" id="m-submit">저장</button>
     </div>`);
   document.getElementById('m-submit').addEventListener('click',async()=>{
-    await api('updateCategory',{id:cat.id,
+    const pwInput = document.getElementById('m-password').value;
+    const updatePayload = {
+      id:cat.id,
       name:document.getElementById('m-name').value.trim(),
       owner:document.getElementById('m-owner').value.trim(),
-      desc:document.getElementById('m-desc').value.trim()});
+      desc:document.getElementById('m-desc').value.trim()
+    };
+    // 비밀번호 필드에 뭔가 입력했을 때만 업데이트
+    if(pwInput !== '') updatePayload.password = pwInput.trim();
+    await api('updateCategory', updatePayload);
     closeModal();toast('수정되었습니다.');
     const data=await api('getAll');
     STATE.categories=data.categories;STATE.stagesByCategory=data.stagesByCategory;
+    // 비번 변경 시 잠금 해제 캐시 초기화
+    if(pwInput !== '') STATE.unlockedCats.delete(cat.id);
     renderCategoryList();selectCategory(cat.id);
   });
 });
