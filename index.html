@@ -125,7 +125,7 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 .stage-banner .hint{font-size:11px;color:var(--muted);margin-left:auto;}
 
 /* ── 4열 그리드 ── */
-.col-grid{display:grid;grid-template-columns:repeat(4,minmax(210px,1fr));gap:12px;min-width:800px;}
+.col-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px;min-width:800px;}
 .col-card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
   display:flex;flex-direction:column;overflow:hidden;}
 .col-head{
@@ -332,7 +332,7 @@ textarea{resize:vertical;min-height:76px;}
   .stage-nav-header,.stage-nav-foot{display:none;}
   .stage-nav-item{border-left:none;border-bottom:3px solid transparent;padding:6px 12px;}
   .stage-nav-item.active{border-bottom-color:var(--seal);border-left:none;background:none;}
-  .col-grid{grid-template-columns:repeat(4,minmax(180px,1fr));}
+  .col-grid{grid-template-columns:2fr 1fr 1fr 1fr;}
 }
 </style>
 </head>
@@ -452,7 +452,7 @@ textarea{resize:vertical;min-height:76px;}
 
 <script>
 /* ── 설정 ── */
-const API_URL = 'https://script.google.com/macros/s/AKfycbwGLNHpCbt9u1PmSNQxTUr288r8Mx9x0Loye937WaCaaLLAru2hrpgojZ2Tu5keDkm4/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyRL9VSd57QsTlXvSGL1CqcFsH859noxR83ItSdw7jDP806OI51lBTPGUE7zJnxno6L/exec';
 // 관리자 비밀번호 목록 (Apps Script ADMIN_EMAILS 와 별개로 클라이언트 측 간단 인증)
 // 실제 배포 시 이 목록을 원하는 이메일+비밀번호 쌍으로 수정하세요.
 const ADMIN_ACCOUNTS = [
