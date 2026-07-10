@@ -35,9 +35,11 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 .brand .mark{width:9px;height:9px;border-radius:2px;background:var(--seal);
   display:inline-block;transform:rotate(45deg);margin-right:6px;}
 .brand h1{font-size:13.5px;font-weight:800;margin:0;display:inline;}
-.brand small{display:block;color:var(--muted);font-size:11px;margin-top:5px;
-  cursor:pointer;border-bottom:1px dashed transparent;width:fit-content;}
-.brand small:hover{color:var(--seal);border-bottom-color:var(--seal);}
+.brand-notice{
+  font-size:10px;color:var(--muted);margin:6px 0 0;line-height:1.5;
+  padding:6px 8px;background:var(--seal-soft);border-radius:6px;
+  border-left:2px solid var(--seal);
+}
 
 .cat-list{display:flex;flex-direction:column;gap:2px;flex:1;overflow-y:auto;}
 .cat-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;
@@ -339,7 +341,7 @@ textarea{resize:vertical;min-height:76px;}
   }
   .brand{display:flex;align-items:center;gap:8px;padding:0;}
   .brand h1{font-size:14px;}
-  .brand small{display:none;} /* 모바일에서 학교명 숨김 (공간 절약) */
+  .brand-notice{display:none;} /* 모바일에서 안내문 숨김 (공간 절약) */
 
   .cat-list{
     flex-direction:row;flex:none;overflow-x:auto;
@@ -486,7 +488,7 @@ textarea{resize:vertical;min-height:76px;}
   <aside class="sidebar">
     <div class="brand">
       <span class="mark"></span><h1>학교업무별 프로세스</h1>
-      <small id="schoolNameLabel">학교명 설정</small>
+      <p class="brand-notice">이 웹앱은 개인의 필요에 의해서 제작된 것으로 오류가 있을 수 있으므로 정확한 업무처리절차는 관련 지침 및 법령에 따라 주시기 바랍니다.</p>
     </div>
     <div class="cat-list" id="catList"></div>
     <div class="sidebar-foot">
@@ -703,8 +705,9 @@ async function init(){
     const data=await api('getAll');
     STATE.categories=data.categories;
     STATE.stagesByCategory=data.stagesByCategory;
-    STATE.schoolName=(data.settings&&data.settings.schoolName)||'학교명 설정';
-    document.getElementById('schoolNameLabel').textContent=STATE.schoolName;
+    STATE.schoolName=(data.settings&&data.settings.schoolName)||'';
+    const snLabel=document.getElementById('schoolNameLabel');
+    if(snLabel) snLabel.textContent=STATE.schoolName;
 
     // 로딩 성공 시 빈화면 복원
     document.getElementById('emptyMain').innerHTML = `
@@ -1403,7 +1406,8 @@ document.getElementById('deleteCategoryBtn').addEventListener('click',async()=>{
 });
 
 /* ── 학교명 ── */
-document.getElementById('schoolNameLabel').addEventListener('click',()=>{
+const _snLabel = document.getElementById('schoolNameLabel');
+if(_snLabel) _snLabel.addEventListener('click',()=>{
   openModal(`
     <h3>학교명 변경</h3>
     <div class="sub">모든 사용자에게 동일하게 표시됩니다 (관리자만 가능).</div>
@@ -1416,7 +1420,9 @@ document.getElementById('schoolNameLabel').addEventListener('click',()=>{
     const name=document.getElementById('m-school').value.trim();
     if(!name)return toast('학교명을 입력하세요.');
     await api('updateSchoolName',{schoolName:name});
-    STATE.schoolName=name;document.getElementById('schoolNameLabel').textContent=name;
+    STATE.schoolName=name;
+    const _sl=document.getElementById('schoolNameLabel');
+    if(_sl) _sl.textContent=name;
     closeModal();toast('변경되었습니다.');
   });
 });
