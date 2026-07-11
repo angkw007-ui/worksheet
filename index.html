@@ -259,9 +259,38 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 
 /* 빈 상태 */
 .empty-col{font-size:11.5px;color:var(--muted);text-align:center;padding:18px 8px;line-height:1.6;}
-.empty-main{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  height:60vh;color:var(--muted);font-size:14px;gap:8px;}
+.empty-main{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:80vh;color:var(--muted);font-size:14px;gap:0;
+  padding:40px 24px;
+}
 .empty-main .icon{font-size:36px;opacity:.3;}
+.welcome-box{
+  max-width:520px;width:100%;text-align:center;
+}
+.welcome-logo{
+  display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:24px;
+}
+.welcome-logo .mark{
+  width:16px;height:16px;border-radius:3px;background:var(--seal);
+  display:inline-block;transform:rotate(45deg);flex-shrink:0;
+}
+.welcome-logo h2{font-size:22px;font-weight:800;margin:0;color:var(--ink);letter-spacing:-.3px;}
+.welcome-notice{
+  background:var(--seal-soft);border:1.5px solid rgba(168,51,63,.2);
+  border-radius:12px;padding:22px 26px;
+  font-size:14.5px;font-weight:700;color:var(--seal);
+  line-height:1.75;margin-bottom:28px;
+  position:relative;
+}
+.welcome-notice::before{
+  content:'📌';font-size:18px;display:block;margin-bottom:10px;
+}
+.welcome-arrow{
+  font-size:13px;color:var(--muted);display:flex;align-items:center;justify-content:center;
+  gap:6px;animation:bounce .9s ease-in-out infinite alternate;
+}
+@keyframes bounce{from{transform:translateY(0);}to{transform:translateY(6px);}}
 
 /* 로딩 */
 .loading-text{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;padding:8px 0;}
@@ -482,8 +511,9 @@ textarea{resize:vertical;min-height:76px;}
   .btn-admin-float.logged{background:var(--pine);}
 
   /* 빈 상태 */
-  .empty-main{height:40vh;}
-  .empty-main .icon{font-size:28px;}
+  .empty-main{min-height:50vh;padding:20px 16px;}
+  .welcome-notice{font-size:13.5px;padding:18px 18px;}
+  .welcome-logo h2{font-size:18px;}
 
   /* 로딩 */
   .loading-text{padding:14px 0;}
@@ -504,7 +534,7 @@ textarea{resize:vertical;min-height:76px;}
   <aside class="sidebar">
     <div class="brand">
       <span class="mark"></span><h1>학교업무별 프로세스</h1>
-      <p class="brand-notice">이 웹앱은 개인이 필요해서 제작한 것으로, 오류가 있을 수 있으니 정확한 업무처리절차는 관련 지침 및 법령, 가이드를 확인하시기 바랍니다.</p>
+      <p class="brand-notice">이 웹앱은 개인의 필요에 의해서 제작된 것으로, 오류가 있을 수 있으니 정확한 업무처리절차는 관련 지침 및 법령, 가이드를 확인하시기 바랍니다.</p>
     </div>
     <div class="cat-list" id="catList"></div>
     <div class="sidebar-foot">
@@ -615,7 +645,7 @@ textarea{resize:vertical;min-height:76px;}
 
 <script>
 /* ── 설정 ── */
-const API_URL = 'https://script.google.com/macros/s/AKfycbw4Ufsbw0mZ4CIvCad5Euni_ALAFAaD23p5awGSoluY2BRHXTDtKrlgs_Vp8_V09JB-/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyRL9VSd57QsTlXvSGL1CqcFsH859noxR83ItSdw7jDP806OI51lBTPGUE7zJnxno6L/exec';
 // 관리자 비밀번호 목록 (Apps Script ADMIN_EMAILS 와 별개로 클라이언트 측 간단 인증)
 // 실제 배포 시 이 목록을 원하는 이메일+비밀번호 쌍으로 수정하세요.
 const ADMIN_ACCOUNTS = [
@@ -732,7 +762,8 @@ async function init(){
       <div>왼쪽에서 업무분야를 선택하세요.</div>`;
 
     renderCategoryList();
-    if(STATE.categories.length>0) selectCategory(STATE.categories[0].id);
+    // 자동 선택 제거 — 첫 화면은 안내문 웰컴 화면으로
+    showWelcome();
   }catch(e){
     // 상세 오류 안내
     document.getElementById('emptyMain').innerHTML = `
@@ -763,6 +794,28 @@ function testApiDirect(){
   // 새 탭으로 직접 열기
   window.open(testUrl, '_blank');
   toast('새 탭에서 API 응답을 확인하세요. test({...}) 형태면 정상입니다.');
+}
+
+function showWelcome(){
+  const el = document.getElementById('emptyMain');
+  el.style.display = '';
+  document.getElementById('stageNav').style.display = 'none';
+  document.getElementById('contentArea').style.display = 'none';
+  el.innerHTML = `
+    <div class="welcome-box">
+      <div class="welcome-logo">
+        <span class="mark"></span>
+        <h2>학교업무별 프로세스</h2>
+      </div>
+      <div class="welcome-notice">
+        이 웹앱은 개인이 필요해서 제작한 것으로, 오류가 있을 수 있으니
+        정확한 업무처리절차는 관련 지침 및 법령, 가이드를 확인하시기 바랍니다.
+      </div>
+      <div class="welcome-arrow">
+        ← 왼쪽에서 업무분야를 선택하세요
+        <span style="font-size:16px;">👈</span>
+      </div>
+    </div>`;
 }
 
 /* ── 사이드바 ── */
@@ -1490,11 +1543,7 @@ document.getElementById('deleteCategoryBtn').addEventListener('click',async()=>{
   STATE.categories=data.categories;STATE.stagesByCategory=data.stagesByCategory;
   renderCategoryList();
   if(STATE.categories.length>0)selectCategory(STATE.categories[0].id);
-  else{
-    document.getElementById('stageNav').style.display='none';
-    document.getElementById('contentArea').style.display='none';
-    document.getElementById('emptyMain').style.display='';
-  }
+  else{ showWelcome(); }
 });
 
 /* ── 학교명 ── */
