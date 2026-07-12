@@ -234,6 +234,18 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 .item-del:hover{color:var(--seal);}
 .is-admin .item-del{display:block;}
 .is-admin .doc-item:hover .item-del{opacity:1;}
+
+/* 수정 버튼 — 관리자만 */
+.item-edit{
+  background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:11px;padding:2px 5px;border-radius:4px;
+  display:none;flex-shrink:0;
+}
+.item-edit:hover{color:var(--sky);}
+.is-admin .item-edit{display:block;}
+
+/* 수정/삭제 버튼 묶음 */
+.item-actions{display:flex;gap:2px;flex-shrink:0;}
 .type-tag{display:inline-block;font-size:9.5px;font-weight:700;padding:2px 7px;
   border-radius:4px;margin-right:4px;vertical-align:middle;}
 .type-tag.결재예시{background:var(--pine-soft);color:var(--pine);}
@@ -644,7 +656,7 @@ textarea{resize:vertical;min-height:76px;}
 
 <script>
 /* ── 설정 ── */
-const API_URL = 'https://script.google.com/macros/s/AKfycbywhXCI7tZPEAlgXe5_5g4-1Vpyv1qPZ37xHUP-dsuxGXvyUkteHqY5MhM7yFsDJhX3/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbyRL9VSd57QsTlXvSGL1CqcFsH859noxR83ItSdw7jDP806OI51lBTPGUE7zJnxno6L/exec';
 // 관리자 비밀번호 목록 (Apps Script ADMIN_EMAILS 와 별개로 클라이언트 측 간단 인증)
 // 실제 배포 시 이 목록을 원하는 이메일+비밀번호 쌍으로 수정하세요.
 const ADMIN_ACCOUNTS = [
@@ -1031,32 +1043,82 @@ async function loadDocs(){
     const {docs}=await api('getDocs',{stageId:STATE.currentStageId, categoryId:STATE.currentCategoryId});
     if(!docs.length){el.innerHTML='<div class="empty-col">결재예시·서식이 없습니다</div>';return;}
     el.innerHTML=docs.map(d=>{
-      // fileUrl에서 Drive 파일 ID 추출 → 다운로드 링크 생성
-      const {fileUrl, downloadUrl} = parseDriveUrl(d.fileUrl||d.downloadUrl||'');
-      const hasFile = !!(fileUrl);
+      const {fileUrl, downloadUrl}=parseDriveUrl(d.fileUrl||d.downloadUrl||'');
+      const hasFile=!!(fileUrl);
       return `
-      <div class="doc-item" data-id="${d.id}">
+      <div class="doc-item" data-id="${d.id}"
+           data-title="${esc(d.title)}" data-type="${esc(d.type)}"
+           data-desc="${esc(d.desc||'')}" data-filename="${esc(d.fileName||'')}"
+           data-fileurl="${esc(d.fileUrl||'')}">
         <div class="doc-item-top">
           <div>
             <span class="type-tag ${esc(d.type)}">${esc(d.type)}</span>
             <span class="doc-title">${esc(d.title)}</span>
           </div>
-          <button class="item-del">✕</button>
+          <div class="item-actions">
+            <button class="item-edit" title="수정">✏️</button>
+            <button class="item-del" title="삭제">✕</button>
+          </div>
         </div>
         ${d.desc?`<div class="doc-sub">${esc(d.desc)}</div>`:''}
         ${hasFile
           ?`<a class="dl-btn" href="${esc(downloadUrl||fileUrl)}" target="_blank" rel="noopener">⬇ ${esc(d.fileName||'다운로드')}</a>`
-          :`<span style="font-size:11px;color:var(--muted);">첨부파일 없음</span>`
-        }
+          :`<span style="font-size:11px;color:var(--muted);">첨부파일 없음</span>`}
       </div>`;
     }).join('');
+
+    // 삭제
     el.querySelectorAll('.item-del').forEach(b=>b.addEventListener('click',async()=>{
       if(!STATE.isAdmin)return toast('관리자만 삭제할 수 있습니다.');
       if(!confirm('삭제할까요?'))return;
-      try{
-        await api('deleteDoc',{id:b.closest('.doc-item').dataset.id});
-        loadDocs();
-      }catch(e){ toast('삭제 실패: '+e.message); }
+      try{ await api('deleteDoc',{id:b.closest('.doc-item').dataset.id}); loadDocs(); }
+      catch(e){ toast('삭제 실패: '+e.message); }
+    }));
+
+    // 수정
+    el.querySelectorAll('.item-edit').forEach(b=>b.addEventListener('click',()=>{
+      if(!STATE.isAdmin)return toast('관리자만 수정할 수 있습니다.');
+      const item=b.closest('.doc-item');
+      const {id, title, type, desc, filename:fileName, fileurl:rawFileUrl}=
+        {id:item.dataset.id, title:item.dataset.title, type:item.dataset.type,
+         desc:item.dataset.desc, filename:item.dataset.filename, fileurl:item.dataset.fileurl};
+      openModal(`
+        <h3>결재예시·서식 수정</h3>
+        <div class="field">
+          <label>구분</label>
+          <select id="m-type">
+            <option value="결재예시" ${type==='결재예시'?'selected':''}>결재예시</option>
+            <option value="서식" ${type==='서식'?'selected':''}>서식</option>
+          </select>
+        </div>
+        <div class="field"><label>제목</label><input type="text" id="m-title" value="${esc(title)}"></div>
+        <div class="field"><label>설명</label><textarea id="m-desc" style="min-height:55px;">${esc(desc)}</textarea></div>
+        <div class="field"><label>파일명</label><input type="text" id="m-filename" value="${esc(fileName)}"></div>
+        <div class="field">
+          <label>Drive 링크 (변경 시 입력, 유지하려면 비워두세요)</label>
+          <input type="text" id="m-fileurl" placeholder="https://drive.google.com/...">
+          ${rawFileUrl?`<div class="hint">현재: <a href="${esc(rawFileUrl)}" target="_blank" style="color:var(--sky);">파일 열기</a></div>`:''}
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="closeModal()">취소</button>
+          <button class="btn-primary seal" id="m-submit">저장</button>
+        </div>`);
+      document.getElementById('m-submit').addEventListener('click',async()=>{
+        const newTitle=document.getElementById('m-title').value.trim();
+        if(!newTitle)return toast('제목을 입력하세요.');
+        const newRawUrl=document.getElementById('m-fileurl').value.trim();
+        const {fileUrl:newFileUrl, downloadUrl:newDlUrl}=parseDriveUrl(newRawUrl||rawFileUrl);
+        const newFileName=document.getElementById('m-filename').value.trim()||fileName;
+        try{
+          await api('updateDoc',{
+            id, title:newTitle,
+            type:document.getElementById('m-type').value,
+            desc:document.getElementById('m-desc').value.trim(),
+            fileUrl:newFileUrl, fileName:newFileName, downloadUrl:newDlUrl
+          });
+          closeModal(); toast('수정되었습니다.'); loadDocs();
+        }catch(e){ toast('수정 실패: '+e.message); }
+      });
     }));
   }catch(e){el.innerHTML=`<div class="empty-col">오류: ${esc(e.message)}</div>`;}
 }
@@ -1108,10 +1170,15 @@ async function loadLaws(){
     el.innerHTML=laws.map(l=>{
       const {fileUrl, downloadUrl}=parseDriveUrl(l.fileUrl||l.downloadUrl||'');
       return `
-      <div class="doc-item" data-id="${l.id}">
+      <div class="doc-item" data-id="${l.id}"
+           data-title="${esc(l.title)}" data-lawname="${esc(l.lawName||'')}"
+           data-filename="${esc(l.fileName||'')}" data-fileurl="${esc(l.fileUrl||'')}">
         <div class="doc-item-top">
           <span class="doc-title">${esc(l.title)}</span>
-          <button class="item-del">✕</button>
+          <div class="item-actions">
+            <button class="item-edit" title="수정">✏️</button>
+            <button class="item-del" title="삭제">✕</button>
+          </div>
         </div>
         ${l.lawName?`<div class="doc-sub">${esc(l.lawName)}</div>`:''}
         ${fileUrl
@@ -1119,13 +1186,51 @@ async function loadLaws(){
           :''}
       </div>`;
     }).join('');
+
+    // 삭제
     el.querySelectorAll('.item-del').forEach(b=>b.addEventListener('click',async()=>{
       if(!STATE.isAdmin)return toast('관리자만 삭제할 수 있습니다.');
       if(!confirm('삭제할까요?'))return;
-      try{
-        await api('deleteLaw',{id:b.closest('.doc-item').dataset.id});
-        loadLaws();
-      }catch(e){ toast('삭제 실패: '+e.message); }
+      try{ await api('deleteLaw',{id:b.closest('.doc-item').dataset.id}); loadLaws(); }
+      catch(e){ toast('삭제 실패: '+e.message); }
+    }));
+
+    // 수정
+    el.querySelectorAll('.item-edit').forEach(b=>b.addEventListener('click',()=>{
+      if(!STATE.isAdmin)return toast('관리자만 수정할 수 있습니다.');
+      const item=b.closest('.doc-item');
+      const id=item.dataset.id, title=item.dataset.title,
+            lawName=item.dataset.lawname, fileName=item.dataset.filename,
+            rawFileUrl=item.dataset.fileurl;
+      openModal(`
+        <h3>법령·공문 수정</h3>
+        <div class="field"><label>제목</label><input type="text" id="m-title" value="${esc(title)}"></div>
+        <div class="field"><label>법령명 / 공문번호</label><input type="text" id="m-lawname" value="${esc(lawName)}"></div>
+        <div class="field"><label>파일명</label><input type="text" id="m-filename" value="${esc(fileName)}"></div>
+        <div class="field">
+          <label>Drive 링크 (변경 시 입력, 유지하려면 비워두세요)</label>
+          <input type="text" id="m-fileurl" placeholder="https://drive.google.com/...">
+          ${rawFileUrl?`<div class="hint">현재: <a href="${esc(rawFileUrl)}" target="_blank" style="color:var(--sky);">파일 열기</a></div>`:''}
+        </div>
+        <div class="modal-actions">
+          <button class="btn-secondary" onclick="closeModal()">취소</button>
+          <button class="btn-primary seal" id="m-submit">저장</button>
+        </div>`);
+      document.getElementById('m-submit').addEventListener('click',async()=>{
+        const newTitle=document.getElementById('m-title').value.trim();
+        if(!newTitle)return toast('제목을 입력하세요.');
+        const newRawUrl=document.getElementById('m-fileurl').value.trim();
+        const {fileUrl:newFileUrl, downloadUrl:newDlUrl}=parseDriveUrl(newRawUrl||rawFileUrl);
+        const newFileName=document.getElementById('m-filename').value.trim()||fileName;
+        try{
+          await api('updateLaw',{
+            id, title:newTitle,
+            lawName:document.getElementById('m-lawname').value.trim(),
+            fileUrl:newFileUrl, fileName:newFileName, downloadUrl:newDlUrl
+          });
+          closeModal(); toast('수정되었습니다.'); loadLaws();
+        }catch(e){ toast('수정 실패: '+e.message); }
+      });
     }));
   }catch(e){el.innerHTML=`<div class="empty-col">오류: ${esc(e.message)}</div>`;}
 }
