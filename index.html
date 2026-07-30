@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>학교업무별 프로세스</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 20 20%22><rect width=%2220%22 height=%2220%22 rx=%224%22 fill=%22%23a8333f%22/></svg>">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 :root{
@@ -656,12 +657,22 @@ textarea{resize:vertical;min-height:76px;}
 
 <script>
 /* ── 설정 ── */
-const API_URL = 'https://script.google.com/macros/s/AKfycbyowtu4Ic1Zl7SBt23kbkZwqvPhHCSQDVFzSn3wb6JMabpGnMmLrSdQs-1G0QRAyY-V/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzzQMPXJtLRcdzeQ8dTrweUr_qIQ4O_ClWgnLmGYIMA5lhvOwc5360t31_dGR5lAzMb/exec';
 // 관리자 비밀번호 목록 (Apps Script ADMIN_EMAILS 와 별개로 클라이언트 측 간단 인증)
-// 실제 배포 시 이 목록을 원하는 이메일+비밀번호 쌍으로 수정하세요.
+// ⚠️ 보안 주의: 이 파일은 공개 웹사이트(GitHub Pages 등)에 그대로 배포되므로
+//    "소스 보기"만 해도 누구나 이 배열을 볼 수 있습니다.
+//    평문 비밀번호 대신 SHA-256 해시값을 저장해 최소한의 노출을 막았지만,
+//    완전한 보안은 아닙니다(오프라인 크래킹 가능). 진짜 보안이 필요하다면
+//    이 인증 자체를 Apps Script(서버) 쪽 verifyPassword 같은 API로 옮기세요.
+// 새 비밀번호 해시 만드는 법(브라우저 콘솔에서):
+//   await sha256('새비밀번호')
 const ADMIN_ACCOUNTS = [
-  { email: 'angkw007@gmail.com', password: '0425' }
+  { email: 'angkw007@gmail.com', passwordHash: '0a93e35bd80e112fb28157d3c43574ab534b4b6d667c096b6914663b32599ba9' }
 ];
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 
 let STATE = {
   categories:[], stagesByCategory:{},
@@ -672,10 +683,10 @@ let STATE = {
 
 /* ── JSONP API ── */
 let _seq=0;
-function api(action, payload={}){
+function _apiOnce(action, payload){
   return new Promise((resolve,reject)=>{
     const cb='_cb_'+(++_seq)+'_'+Date.now();
-    const timer=setTimeout(()=>{cleanup();reject(new Error('요청 시간 초과'));},20000);
+    const timer=setTimeout(()=>{cleanup();reject(new Error('요청 시간 초과(20초). 네트워크가 느리거나 Apps Script 응답이 없습니다.'));},20000);
     function cleanup(){
       clearTimeout(timer);delete window[cb];
       const el=document.getElementById(cb);if(el)el.parentNode.removeChild(el);
@@ -684,9 +695,29 @@ function api(action, payload={}){
     const s=document.createElement('script');
     s.id=cb;
     s.src=API_URL+'?'+new URLSearchParams({action,payload:JSON.stringify(payload),callback:cb});
-    s.onerror=()=>{cleanup();reject(new Error('스크립트 로드 실패'));};
+    // 스크립트 태그 로드 자체가 실패한 경우 — 광고 차단기/추적 방지 기능이
+    // script.google.com 또는 리디렉션되는 script.googleusercontent.com 요청을
+    // 차단했거나, Apps Script 배포 URL/권한 설정이 잘못됐을 가능성이 큽니다.
+    s.onerror=()=>{cleanup();reject(new Error('스크립트 로드 실패(네트워크 차단 가능성)'));};
     document.head.appendChild(s);
   });
+}
+async function api(action, payload={}){
+  try{
+    return await _apiOnce(action, payload);
+  }catch(e){
+    // 광고 차단기/추적 방지 등 일시적 차단일 수 있으므로 한 번 더 시도
+    if(/스크립트 로드 실패|시간 초과/.test(e.message)){
+      try{ return await _apiOnce(action, payload); }
+      catch(e2){
+        e2.message = e2.message + '\n\n▶ 이 오류가 계속되면: 브라우저 확장(광고 차단기)을 끄거나, '
+          + '엣지 설정 > 개인정보 보호 > 추적 방지를 "기본(균형)"으로 낮추고, '
+          + 'Apps Script 배포 시 "액세스 권한=모든 사용자"인지 확인해보세요.';
+        throw e2;
+      }
+    }
+    throw e;
+  }
 }
 
 function toast(msg){
@@ -728,10 +759,11 @@ document.getElementById('adminLoginBtn').addEventListener('click',()=>{
       <button class="btn-secondary" onclick="closeModal()">취소</button>
       <button class="btn-primary seal" id="m-submit">로그인</button>
     </div>`);
-  const doLogin=()=>{
+  const doLogin=async()=>{
     const email=document.getElementById('m-email').value.trim();
     const pw=document.getElementById('m-pw').value;
-    const match=ADMIN_ACCOUNTS.find(a=>a.email===email&&a.password===pw);
+    const pwHash=await sha256(pw);
+    const match=ADMIN_ACCOUNTS.find(a=>a.email===email&&a.passwordHash===pwHash);
     if(!match){
       document.getElementById('m-login-err').style.display='block';
       return;
@@ -781,12 +813,13 @@ async function init(){
       <div class="icon">⚠️</div>
       <div style="font-size:13px;font-weight:700;color:var(--seal);margin-bottom:8px;">데이터 로딩 실패</div>
       <div style="font-size:12px;color:var(--muted);max-width:420px;text-align:left;line-height:1.8;">
-        <b>오류:</b> ${esc(e.message)}<br><br>
+        <b>오류:</b> ${esc(e.message).replace(/\n/g,'<br>')}<br><br>
         <b>확인사항:</b><br>
         1️⃣ Apps Script 편집기 → 배포 → 배포 관리에서<br>
         &nbsp;&nbsp;&nbsp;"액세스 권한" = <b>모든 사람</b> 인지 확인<br>
         2️⃣ Code.gs 교체 후 <b>새 버전으로 재배포</b> 했는지 확인<br>
-        3️⃣ 아래 버튼으로 API 직접 테스트
+        3️⃣ 광고 차단기·브라우저 추적 방지 기능을 꺼보고 재시도<br>
+        4️⃣ 아래 버튼으로 API 직접 테스트
       </div>
       <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;justify-content:center;">
         <button onclick="init()" class="btn-primary seal" style="font-size:12px;padding:7px 14px;">🔄 다시 시도</button>
