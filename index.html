@@ -144,7 +144,7 @@ body{font-family:'Pretendard Variable','Pretendard','Apple SD Gothic Neo','Malgu
 .stage-banner .hint{font-size:11px;color:var(--muted);margin-left:auto;}
 
 /* ── 4열 그리드 ── */
-.col-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px;min-width:800px;}
+.col-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:12px;min-width:800px;}
 .col-card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
   display:flex;flex-direction:column;overflow:hidden;}
 .col-head{
@@ -657,7 +657,7 @@ textarea{resize:vertical;min-height:76px;}
 
 <script>
 /* ── 설정 ── */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxHIxk6KfTrclKwpOtyXA5QuEnWM-V6FDhQU_4c9aMyTvNd0231sCYDCDF6NSOSxiux/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzzQMPXJtLRcdzeQ8dTrweUr_qIQ4O_ClWgnLmGYIMA5lhvOwc5360t31_dGR5lAzMb/exec';
 // 관리자 비밀번호 목록 (Apps Script ADMIN_EMAILS 와 별개로 클라이언트 측 간단 인증)
 // ⚠️ 보안 주의: 이 파일은 공개 웹사이트(GitHub Pages 등)에 그대로 배포되므로
 //    "소스 보기"만 해도 누구나 이 배열을 볼 수 있습니다.
@@ -1340,7 +1340,6 @@ async function loadMemos(){
           </div>
         </div>
         <div class="memo-content">${linkify(m.question)}</div>
-        <div class="memo-meta">${esc(m.asker)} · ${esc(m.askedAt)}</div>
       </div>`).join('');
 
     el.querySelectorAll('[data-action="edit"]').forEach(b=>b.addEventListener('click',()=>{
