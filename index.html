@@ -657,7 +657,7 @@ textarea{resize:vertical;min-height:76px;}
 
 <script>
 /* ── 설정 ── */
-const API_URL = 'https://script.google.com/macros/s/AKfycbwiRweGXOednC6yrzNp00yGiZAqKBs5tqr2ELNmBGeJPPPekOPlGDt_auj2VgECTwgU/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzzQMPXJtLRcdzeQ8dTrweUr_qIQ4O_ClWgnLmGYIMA5lhvOwc5360t31_dGR5lAzMb/exec';
 // 관리자 비밀번호 목록 (Apps Script ADMIN_EMAILS 와 별개로 클라이언트 측 간단 인증)
 // ⚠️ 보안 주의: 이 파일은 공개 웹사이트(GitHub Pages 등)에 그대로 배포되므로
 //    "소스 보기"만 해도 누구나 이 배열을 볼 수 있습니다.
@@ -999,6 +999,8 @@ async function loadTasks(){
           ${t.owner?`<div class="task-note">👤 ${esc(t.owner)}</div>`:''}
         </div>
         <div class="task-actions">
+          <button class="task-act-btn" data-action="up" title="위로">↑</button>
+          <button class="task-act-btn" data-action="down" title="아래로">↓</button>
           <button class="task-act-btn" data-action="edit" title="수정">✏️</button>
           <button class="task-act-btn del" data-action="delete" title="삭제">✕</button>
         </div>
@@ -1007,6 +1009,17 @@ async function loadTasks(){
     // 완료 체크 — 누구나
     el.querySelectorAll('.task-check').forEach(c=>c.addEventListener('click',async()=>{
       await api('toggleTaskDone',{id:c.closest('.task-item').dataset.id});loadTasks();
+    }));
+    // 순서 이동 — 관리자만
+    el.querySelectorAll('[data-action="up"]').forEach(b=>b.addEventListener('click',async()=>{
+      if(!STATE.isAdmin)return toast('관리자만 순서를 바꿀 수 있습니다.');
+      await api('moveTask',{id:b.closest('.task-item').dataset.id,stageId:STATE.currentStageId,direction:-1});
+      loadTasks();
+    }));
+    el.querySelectorAll('[data-action="down"]').forEach(b=>b.addEventListener('click',async()=>{
+      if(!STATE.isAdmin)return toast('관리자만 순서를 바꿀 수 있습니다.');
+      await api('moveTask',{id:b.closest('.task-item').dataset.id,stageId:STATE.currentStageId,direction:1});
+      loadTasks();
     }));
     // 수정 — 관리자만
     el.querySelectorAll('[data-action="edit"]').forEach(b=>b.addEventListener('click',()=>{
